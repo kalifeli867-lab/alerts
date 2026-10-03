@@ -154,7 +154,7 @@ $('#nt').onkeydown=e=>{if(e.key==='Enter')$('#na').click()};
 $('#list').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;D.tickers=D.tickers.filter(x=>x!==b.dataset.r);save();render()};
 [['s1','surge'],['s2','win'],['s3','day'],['s4','nh'],['s5','maxp'],['s6','minscore']].forEach(([i,k])=>$('#'+i).onchange=()=>{const v=parseFloat($('#'+i).value);if(v>0){D[k]=v;save()}render()});
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const NPOS=[[/fda (approv|clear)|approval from the fda|510\(k\)|breakthrough (therapy )?designation|fast track/,35],[/phase (2|3|ii|iii).{0,60}(met|positive|success|primary endpoint)|positive (topline|top-line|data|results)/,35],[/definitive (merger )?agreement|to be acquired|buyout|takeover|tender offer|go-private/,40],[/(awarded|wins?|secures?|receives?|signs?).{0,40}(contract|purchase order|order)/,25],[/partnership|collaboration|strategic agreement|license agreement|letter of intent/,15],[/nvidia|microsoft|google|amazon|apple|openai|pentagon|department of defense|u\.s\. army|nasa/,10],[/uplist|nasdaq listing|short squeeze|record (revenue|sales)|raises (full-year )?guidance|patent (granted|issued)/,15],[/\bai\b|quantum|crypto|bitcoin|treasury strategy|robotics/,5]];
+const NPOS=[[/fda (approv|clear)|approval from the fda|510\(k\)|breakthrough (therapy )?designation|fast track/,35],[/phase (2|3|ii|iii).{0,60}(met|positive|success|primary endpoint)|positive (topline|top-line|data|results)/,35],[/definitive (merger )?agreement|to be acquired|buyout|takeover|tender offer|go-private/,40],[/(awarded|wins?|secures?|receives?|signs?).{0,40}(contract|purchase order|order)/,25],[/partnership|partners? with|partnered|collaborat|strategic agreement|license agreement|letter of intent/,15],[/nvidia|microsoft|google|amazon|apple|openai|pentagon|department of defense|u\.s\. army|nasa/,10,1],[/uplist|nasdaq listing|short squeeze|record (revenue|sales)|raises (full-year )?guidance|patent (granted|issued)/,15],[/\bai\b|quantum|crypto|bitcoin|treasury strategy|robotics/,5,1]];
 const NNEG=/offering|dilut|warrant|private placement|reverse (stock )?split|going concern|delist|bankruptcy|sec investigation|class action|downgrade|misses|withdraw|trading halt|halt news|lawsuit|plunge|tumble|slump|short seller|short report|recall|subpoena|fraud|resigns|deficiency|non-compliance|probe|investigation/;
 function pc(s,now){try{const c=s.latestTrade.p,today=dayKey(new Date(now)),db=s.dailyBar,pb=s.prevDailyBar;let base=null;
   if(db&&pb)base=dayKey(new Date(db.t))===today?pb.c:db.c;else if(db)base=dayKey(new Date(db.t))===today?db.o:db.c;else if(pb)base=pb.c;
@@ -180,7 +180,7 @@ async function scanNews(){
     const c=[],allList=[];
     arts.forEach(a=>{const sy=a.symbols||[];if(!sy.length||sy.length>3)return;
       const t=((a.headline||'')+' '+(a.summary||'')).toLowerCase();let s=0;
-      NPOS.forEach(([p,w])=>{if(p.test(t))s+=w});s=Math.min(s,90);if(NNEG.test(t))s=0;
+      let cx=0;NPOS.forEach(([p,w,ctx])=>{if(p.test(t)){if(ctx)cx+=w;else s+=w}});if(s>0)s+=cx;s=Math.min(s,90);if(NNEG.test(t))s=0;
       allList.push({a,s:Math.max(0,s),sy});if(s>=D.minscore)c.push({a,s,sy})});
     const syms=[...new Set(c.flatMap(x=>x.sy))],snap={};
     for(let i=0;i<syms.length;i+=50){
