@@ -34,6 +34,7 @@ details{background:var(--card);border:1px solid var(--line);border-radius:12px;p
 summary{cursor:pointer;font-weight:700}
 label{display:block;margin-top:10px;font-size:.9rem;color:var(--mute)}label input{width:100%;margin-top:4px}
 .al{border-inline-start:3px solid var(--up)}
+.sc{display:inline-block;min-width:44px;text-align:center;border-radius:8px;padding:2px 8px;font-weight:700;color:#04111f}.sh{background:var(--up)}.sm{background:#f5c451}.sl{background:var(--line);color:var(--mute)}
 a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 </style>
 </head>
@@ -41,31 +42,39 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <main>
 <div class="top"><div><h1>התראות עלייה</h1><div class="st" id="st">מושהה</div></div><button id="go">הפעל ניטור</button></div>
 
-<details id="setup"><summary>חיבור לנתוני בורסה</summary>
-<p><b>שלושה צעדים:</b> 1) לחץ על הקישור למטה והירשם בחינם. 2) העתק את המפתח (API Key). 3) הדבק אותו כאן ולחץ "שמור מפתח".</p>
-<label>מפתח API של Finnhub (חינמי)<input id="key" type="password" autocomplete="off" dir="ltr" placeholder="הדבק כאן את המפתח"></label>
-<p class="m">אין מפתח? <a href="https://finnhub.io/register" target="_blank" rel="noopener">הרשמה חינמית ב-Finnhub</a></p>
-<button id="sk">שמור מפתח</button></details>
+<details id="setup"><summary>חיבור לנתוני בורסה (Alpaca)</summary>
+<p><b>ארבעה צעדים:</b> 1) לחץ על הקישור והירשם בחינם, בחר חשבון Paper (בלי כסף אמיתי). 2) בלוח הבקרה חפש API Keys ולחץ Generate. 3) העתק את Key ID ואת Secret (ה-Secret מוצג פעם אחת בלבד). 4) הדבק כאן ולחץ "שמור מפתחות".</p>
+<label>Key ID<input id="kid" type="password" autocomplete="off" dir="ltr" placeholder="הדבק Key ID"></label>
+<label>Secret<input id="sec" type="password" autocomplete="off" dir="ltr" placeholder="הדבק Secret"></label>
+<p class="m"><a href="https://app.alpaca.markets/signup" target="_blank" rel="noopener">הרשמה חינמית ב-Alpaca</a></p>
+<button id="sk">שמור מפתחות</button></details>
 
 <h2>המניות שלי</h2>
 <div id="list"></div>
 <div class="add"><input id="nt" dir="ltr" placeholder="סימול, למשל MSFT" autocapitalize="characters" maxlength="8"><button id="na">הוסף</button></div>
 
+<h2>חדשות לפני הפתיחה</h2>
+<div class="top"><span class="st" id="nst">לא נסרק עדיין</span><button id="ns">סרוק עכשיו</button></div>
+<p class="m">הציון (0-100) הוא הערכה לפי סוג החדשה ומחיר המניה, ולא סיכוי מדויק לקפיצה.</p>
+<div id="news"></div>
+
 <details><summary>הגדרות התראה</summary>
 <label>עלייה של לפחות (%)<input id="s1" type="number" step="0.1" min="0.1" inputmode="decimal"></label>
 <label>בתוך חלון זמן (דקות)<input id="s2" type="number" step="1" min="5" inputmode="numeric"></label>
-<label>עלייה יומית גדולה (%)<input id="s3" type="number" step="0.5" min="1" inputmode="decimal"></label></details>
+<label>עלייה יומית גדולה (%)<input id="s3" type="number" step="0.5" min="1" inputmode="decimal"></label>
+<label>חדשות מהשעות האחרונות<input id="s4" type="number" step="1" min="1" max="48" inputmode="numeric"></label>
+<label>מחיר מקסימלי לחדשות ($)<input id="s5" type="number" step="1" min="1" inputmode="decimal"></label></details>
 
 <h2>התראות אחרונות</h2>
 <div id="log"></div>
 
-<p class="note">האפליקציה מנטרת רק כשהיא פתוחה, והמסך נשאר דלוק בזמן הניטור. הנתונים בכפוף לשירות Finnhub וייתכן עיכוב. מדובר בהתראה על תנועה חריגה ולא בתחזית או ייעוץ השקעות.</p>
+<p class="note">האפליקציה מנטרת רק כשהיא פתוחה, והמסך נשאר דלוק בזמן הניטור. הנתונים מ-Alpaca (בורסת IEX, כולל מסחר מוקדם) ועשויים להיות חלקיים במניות שנסחרות מעט. מדובר בהתראה על תנועה חריגה ולא בתחזית או ייעוץ השקעות.</p>
 </main>
 <script>
 const $=s=>document.querySelector(s);
-const D={key:'',tickers:['NVDA','TSLA','AAPL','AMD','PLTR'],surge:1.5,win:30,day:5,log:[]};
-try{Object.assign(D,JSON.parse(localStorage.getItem('sa1')||'{}'))}catch(e){}
-const save=()=>{try{localStorage.setItem('sa1',JSON.stringify(D))}catch(e){}};
+const D={kid:'',sec:'',tickers:['NVDA','TSLA','AAPL','AMD','PLTR'],surge:8,win:10,day:20,nh:16,maxp:20,log:[]};
+try{Object.assign(D,JSON.parse(localStorage.getItem('sa2')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('sa2',JSON.stringify(D))}catch(e){}};
 const OK=t=>/^[A-Z.\-]{1,8}$/.test(t);
 D.tickers=D.tickers.filter(OK);
 let hist={},last={},cool={},timer=null,wake=null,on=false;
@@ -79,7 +88,7 @@ function render(){
     return `<div class="card t"><div><b>${t}</b><div class="m">${dp}${mv}${q&&!q.fresh?' · שוק סגור':''}</div></div>
     <div style="display:flex;align-items:center;gap:6px"><span class="p">${q?'$'+q.c.toFixed(2):'–'}</span><button class="g" data-r="${t}" aria-label="הסר ${t}">✕</button></div></div>`}).join('')||'<p class="m">הוסף מניות למעקב.</p>';
   $('#log').innerHTML=D.log.map(a=>`<div class="card al"><b>${a.title}</b><div>${a.body}</div><div class="m">${new Date(a.ts).toLocaleString('he-IL')}</div></div>`).join('')||'<p class="m">עוד אין התראות.</p>';
-  $('#key').value=D.key;$('#s1').value=D.surge;$('#s2').value=D.win;$('#s3').value=D.day;
+  $('#kid').value=D.kid;$('#sec').value=D.sec;$('#s1').value=D.surge;$('#s2').value=D.win;$('#s3').value=D.day;$('#s4').value=D.nh;$('#s5').value=D.maxp;
 }
 function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(a.currentTime+.4)}catch(e){}}
 async function notify(title,body,tag){
@@ -94,42 +103,100 @@ function fire(t,title,body){
   beep();try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
   notify(`${title}: ${t}`,body,k);
 }
+const ETF=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',weekday:'short',hour12:false});
+function et(d){const o={};ETF.formatToParts(d).forEach(p=>o[p.type]=p.value);return o}
+function dayKey(d){const o=et(d);return o.year+o.month+o.day}
+function sessionOpen(d){const o=et(d);if(o.weekday==='Sat'||o.weekday==='Sun')return false;const m=(+o.hour%24)*60+(+o.minute);return m>=240&&m<1200}
 async function poll(){
-  if(!D.key)return;const now=Date.now();
-  await Promise.all(D.tickers.map(async t=>{
-    try{
-      const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${t}&token=${encodeURIComponent(D.key)}`);
-      if(r.status===401||r.status===403){setSt('מפתח API לא תקין');return}
-      if(r.status===429){setSt('חריגה ממגבלת בקשות, מנסה שוב');return}
-      if(!r.ok)return;const q=await r.json();if(!q.c)return;
-      const fresh=now-q.t*1000<20*60000;
-      const h=(hist[t]||[]).filter(p=>now-p[0]<=D.win*90000);h.push([now,q.c]);hist[t]=h;
+  if(!D.kid||!D.sec||!D.tickers.length)return;
+  const now=Date.now(),open=sessionOpen(new Date(now));
+  try{
+    const r=await fetch('https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols='+encodeURIComponent(D.tickers.join(',')),{headers:{'APCA-API-KEY-ID':D.kid,'APCA-API-SECRET-KEY':D.sec}});
+    if(r.status===401||r.status===403){setSt('המפתחות לא תקינים');return}
+    if(r.status===429){setSt('חריגה ממגבלת בקשות, מנסה שוב');return}
+    if(!r.ok){setSt('שגיאה בנתונים ('+r.status+'), בדוק את רשימת הסימולים');return}
+    const j=await r.json(),m=j.snapshots||j;
+    D.tickers.forEach(t=>{
+      const s=m[t];if(!s||!s.latestTrade)return;
+      const c=s.latestTrade.p,tt=new Date(s.latestTrade.t).getTime();
+      let base=null;
+      const today=dayKey(new Date(now));
+      if(s.dailyBar&&s.prevDailyBar)base=dayKey(new Date(s.dailyBar.t))===today?s.prevDailyBar.c:s.dailyBar.c;
+      else if(s.dailyBar)base=dayKey(new Date(s.dailyBar.t))===today?s.dailyBar.o:s.dailyBar.c;
+      else if(s.prevDailyBar)base=s.prevDailyBar.c;
+      const dp=base?(c/base-1)*100:0;
+      const h=(hist[t]||[]).filter(p=>now-p[0]<=D.win*90000);h.push([now,c]);hist[t]=h;
       const w=h.filter(p=>now-p[0]<=D.win*60000),span=now-w[0][0];
-      const mv=span>=3*60000?(q.c/w[0][1]-1)*100:null;
-      last[t]={c:q.c,dp:q.dp,mv,fresh};
-      if(!fresh)return;
-      if(mv!==null&&mv>=D.surge)fire(t,'🚀 עלייה חדה',`${t} עלתה ${mv.toFixed(2)}% ב-${Math.round(span/60000)} דקות. מחיר $${q.c.toFixed(2)}`);
-      else if(q.dp>=D.day)fire(t,'📈 עלייה יומית גדולה',`${t} עלתה ${q.dp.toFixed(2)}% היום. מחיר $${q.c.toFixed(2)}`);
-    }catch(e){}
-  }));
-  if(on)setSt('מנטר · עודכן '+new Date().toLocaleTimeString('he-IL'));render();
+      const mv=span>=3*60000?(c/w[0][1]-1)*100:null;
+      last[t]={c,dp,mv,fresh:open};
+      if(!open)return;
+      if(mv!==null&&mv>=D.surge)fire(t,'🚀 עלייה חדה',`${t} עלתה ${mv.toFixed(2)}% ב-${Math.round(span/60000)} דקות. מחיר $${c.toFixed(2)}`);
+      else if(dp>=D.day&&now-tt<30*60000)fire(t,'📈 עלייה יומית גדולה',`${t} עלתה ${dp.toFixed(2)}% היום. מחיר $${c.toFixed(2)}`);
+    });
+    if(on)setSt('מנטר · עודכן '+new Date().toLocaleTimeString('he-IL'));
+    render();
+  }catch(e){setSt('אין חיבור לנתוני Alpaca (רשת או חסימת דפדפן)')}
 }
 async function lock(){try{if('wakeLock' in navigator&&on)wake=await navigator.wakeLock.request('screen')}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&on){lock();poll()}});
 async function toggle(){
   if(on){on=false;clearInterval(timer);try{wake&&wake.release()}catch(e){}setSt('מושהה');render();return}
-  if(!D.key){$('#setup').open=true;setSt('הדבק מפתח API כדי להתחיל');return}
+  if(!D.kid||!D.sec){$('#setup').open=true;setSt('הדבק מפתחות כדי להתחיל');return}
   if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
-  on=true;lock();setSt('מתחבר…');poll();timer=setInterval(poll,60000);render();
+  on=true;lock();setSt('מתחבר…');poll();timer=setInterval(poll,30000);render();
 }
 $('#go').onclick=toggle;
-$('#sk').onclick=()=>{D.key=$('#key').value.trim();save();$('#setup').open=false;setSt(D.key?'המפתח נשמר':'מושהה')};
-$('#na').onclick=()=>{const t=$('#nt').value.trim().toUpperCase();if(!OK(t)||D.tickers.includes(t)||D.tickers.length>=30)return;D.tickers.push(t);$('#nt').value='';save();render();if(on)poll()};
+$('#sk').onclick=()=>{D.kid=$('#kid').value.trim();D.sec=$('#sec').value.trim();save();$('#setup').open=false;setSt(D.kid&&D.sec?'המפתחות נשמרו':'מושהה')};
+$('#na').onclick=()=>{const t=$('#nt').value.trim().toUpperCase();if(!OK(t)||D.tickers.includes(t)||D.tickers.length>=50)return;D.tickers.push(t);$('#nt').value='';save();render();if(on)poll()};
 $('#nt').onkeydown=e=>{if(e.key==='Enter')$('#na').click()};
 $('#list').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;D.tickers=D.tickers.filter(x=>x!==b.dataset.r);save();render()};
-[['s1','surge'],['s2','win'],['s3','day']].forEach(([i,k])=>$('#'+i).onchange=()=>{const v=parseFloat($('#'+i).value);if(v>0){D[k]=v;save()}render()});
+[['s1','surge'],['s2','win'],['s3','day'],['s4','nh'],['s5','maxp']].forEach(([i,k])=>$('#'+i).onchange=()=>{const v=parseFloat($('#'+i).value);if(v>0){D[k]=v;save()}render()});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const NPOS=[[/fda (approv|clear)|approval from the fda|510\(k\)|breakthrough (therapy )?designation|fast track/,35],[/phase (2|3|ii|iii).{0,60}(met|positive|success|primary endpoint)|positive (topline|top-line|data|results)/,35],[/definitive (merger )?agreement|to be acquired|buyout|takeover|tender offer|go-private/,40],[/(awarded|wins?|secures?|receives?|signs?).{0,40}(contract|purchase order|order)/,25],[/partnership|collaboration|strategic agreement|license agreement|letter of intent/,15],[/nvidia|microsoft|google|amazon|apple|openai|pentagon|department of defense|u\.s\. army|nasa/,10],[/uplist|nasdaq listing|short squeeze|record (revenue|sales)|raises (full-year )?guidance|patent (granted|issued)/,15],[/\bai\b|quantum|crypto|bitcoin|treasury strategy|robotics/,5]];
+const NNEG=/offering|dilut|warrant|private placement|reverse (stock )?split|going concern|delist|bankruptcy|sec investigation|class action|downgrade|misses|withdraw|trading halt|lawsuit/;
+function pc(s,now){try{const c=s.latestTrade.p,today=dayKey(new Date(now)),db=s.dailyBar,pb=s.prevDailyBar;let base=null;
+  if(db&&pb)base=dayKey(new Date(db.t))===today?pb.c:db.c;else if(db)base=dayKey(new Date(db.t))===today?db.o:db.c;else if(pb)base=pb.c;
+  return [c,base?(c/base-1)*100:null]}catch(e){return [null,null]}}
+let nFirst=true;const nSeen=new Set();
+async function scanNews(){
+  if(!D.kid||!D.sec){$('#nst').textContent='הוסף מפתחות Alpaca כדי לסרוק חדשות';return}
+  $('#nst').textContent='סורק…';
+  const H={'APCA-API-KEY-ID':D.kid,'APCA-API-SECRET-KEY':D.sec},now=Date.now();
+  try{
+    const since=new Date(now-D.nh*3600000).toISOString().replace(/\.\d+Z$/,'Z');
+    let tok=null,arts=[];
+    for(let i=0;i<6;i++){
+      const r=await fetch('https://data.alpaca.markets/v1beta1/news?limit=50&sort=desc&start='+since+(tok?'&page_token='+encodeURIComponent(tok):''),{headers:H});
+      if(r.status===401||r.status===403){$('#nst').textContent='המפתחות לא תקינים';return}
+      if(!r.ok){$('#nst').textContent='שגיאה בחדשות ('+r.status+')';return}
+      const j=await r.json();arts=arts.concat(j.news||[]);tok=j.next_page_token;if(!tok)break;
+    }
+    const c=[];
+    arts.forEach(a=>{const sy=a.symbols||[];if(!sy.length||sy.length>3)return;
+      const t=((a.headline||'')+' '+(a.summary||'')).toLowerCase();let s=0;
+      NPOS.forEach(([p,w])=>{if(p.test(t))s+=w});s=Math.min(s,90);if(NNEG.test(t))s-=40;
+      if(s>=30)c.push({a,s,sy})});
+    const syms=[...new Set(c.flatMap(x=>x.sy))],snap={};
+    for(let i=0;i<syms.length;i+=50){
+      const r=await fetch('https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols='+encodeURIComponent(syms.slice(i,i+50).join(',')),{headers:H});
+      if(r.ok){const j=await r.json();Object.assign(snap,j.snapshots||j)}
+    }
+    const out=[];
+    c.forEach(x=>x.sy.forEach(t=>{const [p,ch]=snap[t]?pc(snap[t],now):[null,null];
+      if(p!==null&&p>D.maxp)return;let s=x.s;if(p!==null)s+=p<5?10:p<10?5:0;if(ch!==null&&ch>=10)s+=5;
+      out.push({t,s:Math.min(s,100),p,ch,a:x.a})}));
+    out.sort((x,y)=>y.s-x.s||new Date(y.a.created_at)-new Date(x.a.created_at));
+    const top=out.slice(0,30);
+    $('#news').innerHTML=top.map(x=>`<div class="card"><div class="t"><b>${esc(x.t)}</b><span class="sc ${x.s>=60?'sh':x.s>=40?'sm':'sl'}">${x.s}</span></div><div>${esc(x.a.headline||'')}</div><div class="m">${x.p!==null?'$'+x.p.toFixed(2)+(x.ch!==null?' · '+(x.ch>=0?'+':'')+x.ch.toFixed(1)+'% מהסגירה':''):'מחיר לא זמין'} · ${new Date(x.a.created_at).toLocaleString('he-IL')}</div>${x.a.url&&/^https?:/.test(x.a.url)?`<a href="${esc(x.a.url)}" target="_blank" rel="noopener">לכתבה</a>`:''}</div>`).join('')||'<p class="m">לא נמצאו חדשות חזקות בטווח הזמן.</p>';
+    top.forEach(x=>{const k=x.a.id+x.t;if(!nSeen.has(k)){nSeen.add(k);if(!nFirst&&x.s>=60)fire(x.t,'📰 חדשה חזקה',x.a.headline||'')}});
+    nFirst=false;
+    $('#nst').textContent='נסרק '+new Date().toLocaleTimeString('he-IL')+' · '+arts.length+' כתבות';
+  }catch(e){$('#nst').textContent='אין חיבור לחדשות (רשת או חסימת דפדפן)'}
+}
+$('#ns').onclick=scanNews;
+setInterval(scanNews,600000);setTimeout(scanNews,600);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-if(!D.key)$('#setup').open=true;
+if(!D.kid||!D.sec)$('#setup').open=true;
 render();
 </script>
 </body>
