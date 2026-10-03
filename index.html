@@ -21,7 +21,7 @@ main{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 1
 h1{font-size:1.4rem;margin:0}h2{font-size:1rem;margin:24px 0 8px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .st{color:var(--mute);font-size:.85rem}.st.on{color:var(--up)}
-button,input{font:inherit;border-radius:10px;border:1px solid var(--line);padding:10px 12px;color:var(--ink);background:var(--card);min-width:0}
+button,input,select{font:inherit;border-radius:10px;border:1px solid var(--line);padding:10px 12px;color:var(--ink);background:var(--card);min-width:0}
 button{background:var(--acc);color:#04111f;font-weight:700;border:0;cursor:pointer}
 button.stop{background:var(--down)}button.g{background:transparent;color:var(--mute);padding:4px 8px;font-weight:400}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
@@ -32,7 +32,7 @@ button.stop{background:var(--down)}button.g{background:transparent;color:var(--m
 .add{display:flex;gap:8px}.add input{flex:1;text-transform:uppercase}
 details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:12px}
 summary{cursor:pointer;font-weight:700}
-label{display:block;margin-top:10px;font-size:.9rem;color:var(--mute)}label input{width:100%;margin-top:4px}
+label{display:block;margin-top:10px;font-size:.9rem;color:var(--mute)}label input{width:100%;margin-top:4px}label select{width:100%;margin-top:4px}
 .al{border-inline-start:3px solid var(--up)}
 .sc{display:inline-block;min-width:44px;text-align:center;border-radius:8px;padding:2px 8px;font-weight:700;color:#04111f}.sh{background:var(--up)}.sm{background:#f5c451}.sl{background:var(--line);color:var(--mute)}
 a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
@@ -58,6 +58,20 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <p class="m">הציון (0-100) הוא הערכה לפי סוג החדשה ומחיר המניה, ולא סיכוי מדויק לקפיצה.</p>
 <div class="top" style="margin-top:8px"><span class="m" id="ndiag"></span><button id="nall" class="g" style="border:1px solid var(--line);color:var(--ink)">הצג את כל הכתבות</button></div>
 <div id="news"></div>
+
+<h2 id="trade">מסחר בחשבון דמה (Paper)</h2>
+<p class="m">חשבון דמה בלבד: כל העסקאות כאן בכסף וירטואלי. בדוק כל הזמנה לפני האישור.</p>
+<div class="card"><div class="m" id="pacc">טוען…</div>
+<label>סימול<input id="tsym" dir="ltr" placeholder="MSFT" autocapitalize="characters" maxlength="8"></label>
+<label>כמות (מספר שלם)<input id="tqty" type="number" min="1" step="1" inputmode="numeric" value="1"></label>
+<label>סוג הזמנה<select id="ttype"><option value="market">Market (מיידי)</option><option value="limit">Limit (מחיר מקסימלי)</option></select></label>
+<label>מחיר Limit<input id="tlim" type="number" step="any" min="0" inputmode="decimal" placeholder="רק ב-Limit או במסחר מורחב"></label>
+<label style="display:flex;gap:8px;align-items:center"><input id="text" type="checkbox" style="width:auto;margin:0">מסחר מורחב (מוקדם או מאוחר, דורש מחיר Limit)</label>
+<div class="add" style="margin-top:12px"><button id="tbuy">קנה</button><button id="tsell" class="stop">מכור</button></div>
+<div class="m" id="tmsg" style="margin-top:8px"></div></div>
+<h2>פוזיציות</h2><div id="ppos"></div>
+<h2>הזמנות אחרונות</h2><div id="pord"></div>
+<button id="trf" class="g" style="border:1px solid var(--line);color:var(--ink);margin-top:8px">רענן</button>
 
 <details><summary>הגדרות התראה</summary>
 <label>עלייה של לפחות (%)<input id="s1" type="number" step="0.1" min="0.1" inputmode="decimal"></label>
@@ -193,7 +207,7 @@ async function scanNews(){
       out.push({t,s:Math.min(s,100),p,ch,a:x.a})}));
     out.sort((x,y)=>y.s-x.s||new Date(y.a.created_at)-new Date(x.a.created_at));
     const top=out.slice(0,30);
-    normalHtml=top.map(x=>`<div class="card"><div class="t"><b>${esc(x.t)}</b><span class="sc ${x.s>=60?'sh':x.s>=40?'sm':'sl'}">${x.s}</span></div><div>${esc(x.a.headline||'')}</div><div class="m">${x.p!==null?'$'+x.p.toFixed(2)+(x.ch!==null?' · '+(x.ch>=0?'+':'')+x.ch.toFixed(1)+'% מהסגירה':''):'מחיר לא זמין'} · ${new Date(x.a.created_at).toLocaleString('he-IL')}</div>${x.a.url&&/^https?:/.test(x.a.url)?`<a href="${esc(x.a.url)}" target="_blank" rel="noopener">לכתבה</a>`:''} ${trLink(x.a)}</div>`).join('')||'<p class="m">לא נמצאו חדשות חזקות בטווח הזמן.</p>';
+    normalHtml=top.map(x=>`<div class="card"><div class="t"><b>${esc(x.t)}</b><span class="sc ${x.s>=60?'sh':x.s>=40?'sm':'sl'}">${x.s}</span></div><div>${esc(x.a.headline||'')}</div><div class="m">${x.p!==null?'$'+x.p.toFixed(2)+(x.ch!==null?' · '+(x.ch>=0?'+':'')+x.ch.toFixed(1)+'% מהסגירה':''):'מחיר לא זמין'} · ${new Date(x.a.created_at).toLocaleString('he-IL')}</div>${x.a.url&&/^https?:/.test(x.a.url)?`<a href="${esc(x.a.url)}" target="_blank" rel="noopener">לכתבה</a>`:''} ${trLink(x.a)} <button class="g" data-buy="${esc(x.t)}">קנה בפייפר</button></div>`).join('')||'<p class="m">לא נמצאו חדשות חזקות בטווח הזמן.</p>';
     lastAll=allList;drawNews();$('#ndiag').textContent=arts.length+' כתבות · '+allList.length+' עם 1-3 מניות · '+c.length+' עם ציון '+D.minscore+'+ · '+out.length+' אחרי סינון מחיר';
     top.forEach(x=>{const k=x.a.id+x.t;if(!nSeen.has(k)){nSeen.add(k);if(!nFirst&&x.s>=60)fire(x.t,'📰 חדשה חזקה',x.a.headline||'')}});
     nFirst=false;
@@ -202,6 +216,46 @@ async function scanNews(){
 }
 $('#ns').onclick=scanNews;$('#nall').onclick=()=>{allMode=!allMode;$('#nall').textContent=allMode?'חזור לחדשות החזקות':'הצג את כל הכתבות';drawNews()};
 setInterval(scanNews,600000);setTimeout(scanNews,600);
+const PAPER='https://paper-api.alpaca.markets/v2';
+function pReq(path,method,body){return fetch(PAPER+path,{method:method||'GET',headers:{'APCA-API-KEY-ID':D.kid,'APCA-API-SECRET-KEY':D.sec,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined})}
+const money=n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+async function loadPaper(){
+  if(!D.kid||!D.sec){$('#pacc').textContent='הוסף מפתחות Alpaca כדי לראות את החשבון';return}
+  try{
+    const [a,p,o]=await Promise.all([pReq('/account'),pReq('/positions'),pReq('/orders?status=all&limit=10&direction=desc')]);
+    if(a.status===401||a.status===403){$('#pacc').textContent='המפתחות לא תקינים (נדרשים מפתחות של חשבון Paper)';return}
+    if(!a.ok){$('#pacc').textContent='שגיאה בחשבון ('+a.status+')';return}
+    const ac=await a.json();
+    $('#pacc').textContent='מזומן '+money(ac.cash)+' · שווי '+money(ac.equity)+' · כוח קנייה '+money(ac.buying_power);
+    const ps=p.ok?await p.json():[];
+    $('#ppos').innerHTML=ps.map(x=>`<div class="card t"><div><b>${esc(x.symbol)}</b><div class="m">${esc(x.qty)} מניות · כניסה ${money(x.avg_entry_price)} · עכשיו ${money(x.current_price)}</div></div><span class="num ${Number(x.unrealized_pl)>=0?'up':'dn'}">${money(x.unrealized_pl)} (${(x.unrealized_plpc*100).toFixed(1)}%)</span></div>`).join('')||'<p class="m">אין פוזיציות פתוחות.</p>';
+    const os=o.ok?await o.json():[];
+    $('#pord').innerHTML=os.map(x=>`<div class="card"><b>${x.side==='buy'?'קנייה':'מכירה'} ${esc(x.symbol)}</b> · ${esc(x.qty)} · ${esc(x.type)}${x.limit_price?' '+money(x.limit_price):''}<div class="m">${esc(x.status)}${x.filled_avg_price?' · בוצע ב-'+money(x.filled_avg_price):''} · ${new Date(x.submitted_at).toLocaleString('he-IL')}</div></div>`).join('')||'<p class="m">אין הזמנות.</p>';
+  }catch(e){$('#pacc').textContent='אין חיבור לחשבון (רשת או חסימת דפדפן)'}
+}
+async function placeOrder(side){
+  const msg=$('#tmsg');
+  const sym=$('#tsym').value.trim().toUpperCase(),qty=Number($('#tqty').value),type=$('#ttype').value,lp=$('#tlim').value.trim(),ext=$('#text').checked;
+  if(!/^[A-Z.\-]{1,8}$/.test(sym)||!(qty>0)||!Number.isInteger(qty)){msg.textContent='בדוק את הסימול ואת הכמות (מספר שלם)';return}
+  if((type==='limit'||ext)&&!(Number(lp)>0)){msg.textContent='הזן מחיר Limit (חובה ב-Limit ובמסחר מורחב)';return}
+  const body={symbol:sym,qty:String(qty),side,type:ext?'limit':type,time_in_force:'day'};
+  if(body.type==='limit')body.limit_price=lp;
+  if(ext)body.extended_hours=true;
+  const txt=(side==='buy'?'קנייה':'מכירה')+' בחשבון דמה (בלי כסף אמיתי)\n'+qty+' × '+sym+'\n'+(body.type==='limit'?'Limit '+lp:'Market')+(ext?'\nמסחר מורחב':'');
+  if(!confirm(txt))return;
+  msg.textContent='שולח…';
+  try{
+    const r=await pReq('/orders','POST',body);
+    const j=await r.json().catch(()=>({}));
+    msg.textContent=r.ok?'ההזמנה נשלחה. סטטוס: '+(j.status||''):'ההזמנה נדחתה: '+(j.message||r.status);
+    loadPaper();
+  }catch(e){msg.textContent='אין חיבור לשליחת הזמנה (רשת או חסימת דפדפן)'}
+}
+$('#tbuy').onclick=()=>placeOrder('buy');
+$('#tsell').onclick=()=>placeOrder('sell');
+$('#trf').onclick=loadPaper;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-buy]');if(b){$('#tsym').value=b.dataset.buy;$('#trade').scrollIntoView()}});
+setTimeout(loadPaper,900);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(!D.kid||!D.sec)$('#setup').open=true;
 render();
