@@ -79,6 +79,11 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <div class="add" style="margin-top:10px"><button id="esave">שמור שינוי</button><button id="eclose" class="g" style="border:1px solid var(--line);color:var(--ink)">סגור</button></div></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button id="trf" class="g" style="border:1px solid var(--line);color:var(--ink)">רענן</button><button id="cancelall" class="g" style="border:1px solid var(--down);color:var(--down)">בטל את כל ההזמנות הפתוחות</button></div>
 
+<h2>יומן עסקאות</h2>
+<div class="card" id="jsum">טוען…</div>
+<div id="jlist"></div>
+<p class="m">רווח ממומש: עסקאות שנסגרו (חישוב FIFO). רווח לא ממומש: פוזיציות שעדיין פתוחות. חשבון דמה בלבד.</p>
+
 <details><summary>הגדרות התראה</summary>
 <label>עלייה של לפחות (%)<input id="s1" type="number" step="0.1" min="0.1" inputmode="decimal"></label>
 <label>בתוך חלון זמן (דקות)<input id="s2" type="number" step="1" min="5" inputmode="numeric"></label>
@@ -223,7 +228,7 @@ async function scanNews(){
 $('#ns').onclick=scanNews;$('#nall').onclick=()=>{allMode=!allMode;$('#nall').textContent=allMode?'חזור לחדשות החזקות':'הצג את כל הכתבות';drawNews()};
 setInterval(scanNews,600000);setTimeout(scanNews,600);
 const PAPER='https://paper-api.alpaca.markets/v2';
-let lastOrders=[],editId=null;const OPEN=['new','accepted','pending_new','partially_filled','held','accepted_for_bidding'];
+let lastOrders=[],lastPos=[],editId=null;const OPEN=['new','accepted','pending_new','partially_filled','held','accepted_for_bidding'];
 function pReq(path,method,body){return fetch(PAPER+path,{method:method||'GET',headers:{'APCA-API-KEY-ID':D.kid,'APCA-API-SECRET-KEY':D.sec,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined})}
 const money=n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 async function loadPaper(){
@@ -234,10 +239,11 @@ async function loadPaper(){
     if(!a.ok){$('#pacc').textContent='שגיאה בחשבון ('+a.status+')';return}
     const ac=await a.json();
     $('#pacc').textContent='מזומן '+money(ac.cash)+' · שווי '+money(ac.equity)+' · כוח קנייה '+money(ac.buying_power);
-    const ps=p.ok?await p.json():[];
+    const ps=p.ok?await p.json():[];lastPos=ps;
     $('#ppos').innerHTML=ps.map(x=>`<div class="card t"><div><b>${esc(x.symbol)}</b><div class="m">${esc(x.qty)} מניות · כניסה ${money(x.avg_entry_price)} · עכשיו ${money(x.current_price)}</div></div><span class="num ${Number(x.unrealized_pl)>=0?'up':'dn'}">${money(x.unrealized_pl)} (${(x.unrealized_plpc*100).toFixed(1)}%)</span></div>`).join('')||'<p class="m">אין פוזיציות פתוחות.</p>';
     const os=o.ok?await o.json():[];lastOrders=os;
     $('#pord').innerHTML=os.map(x=>`<div class="card"><b>${x.side==='buy'?'קנייה':'מכירה'} ${esc(x.symbol)}</b> · ${esc(x.qty)} · ${esc(x.type)}${x.limit_price?' '+money(x.limit_price):''}<div class="m">${esc(x.status)}${x.filled_avg_price?' · בוצע ב-'+money(x.filled_avg_price):''} · ${new Date(x.submitted_at).toLocaleString('he-IL')}</div>${OPEN.includes(x.status)?`<div style="margin-top:8px;display:flex;gap:8px"><button class="g" style="border:1px solid var(--line);color:var(--ink)" data-edit="${esc(x.id)}">ערוך</button><button class="g" style="border:1px solid var(--down);color:var(--down)" data-cancel="${esc(x.id)}">בטל</button></div>`:''}</div>`).join('')||'<p class="m">אין הזמנות.</p>';
+    loadJournal();
   }catch(e){$('#pacc').textContent='אין חיבור לחשבון (רשת או חסימת דפדפן)'}
 }
 async function placeOrder(side){
@@ -300,6 +306,47 @@ async function cancelAll(){
   msg.textContent='שולח…';
   try{const r=await pReq('/orders','DELETE');msg.textContent=r.ok?'כל ההזמנות הפתוחות בוטלו':'הביטול נדחה ('+r.status+')';loadPaper()}
   catch(e){msg.textContent='אין חיבור לביטול (רשת או חסימת דפדפן)'}}
+const sg=n=>(n>=0?'+':'-')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const cl=n=>n>=0?'up':'dn';
+function fifo(orders){
+  const by={};
+  for(const o of orders){
+    const q=Number(o.filled_qty),p=Number(o.filled_avg_price);if(!(q>0)||!(p>0))continue;
+    const st=by[o.symbol]||(by[o.symbol]={lots:[],real:0,spent:0,wins:0,losses:0});
+    const sgn=o.side==='buy'?1:-1;let rem=q,pnl=0,matched=false;
+    if(sgn===1)st.spent+=q*p;
+    while(rem>0&&st.lots.length&&Math.sign(st.lots[0].q)===-sgn){
+      const lot=st.lots[0],m=Math.min(rem,Math.abs(lot.q));
+      pnl+=(lot.q>0?(p-lot.p):(lot.p-p))*m;matched=true;
+      lot.q-=Math.sign(lot.q)*m;rem-=m;if(Math.abs(lot.q)<1e-9)st.lots.shift();
+    }
+    if(rem>0)st.lots.push({q:sgn*rem,p});
+    if(matched){st.real+=pnl;if(pnl>0)st.wins++;else if(pnl<0)st.losses++}
+  }
+  return by;
+}
+async function loadJournal(){
+  try{
+    const r=await pReq('/orders?status=closed&limit=500&direction=desc');
+    if(!r.ok){$('#jsum').textContent='שגיאה בטעינת היומן ('+r.status+')';return}
+    const all=(await r.json()).filter(o=>Number(o.filled_qty)>0&&Number(o.filled_avg_price)>0).sort((a,b)=>new Date(a.filled_at||a.submitted_at)-new Date(b.filled_at||b.submitted_at));
+    const by=fifo(all);
+    lastPos.forEach(p=>{const st=by[p.symbol]||(by[p.symbol]={lots:[],real:0,spent:0,wins:0,losses:0});st.unreal=Number(p.unrealized_pl)||0;st.open=Math.abs(Number(p.cost_basis))||0});
+    const syms=Object.keys(by);
+    if(!syms.length){$('#jsum').textContent='עוד אין עסקאות. אחרי שתבצע ותסגור עסקאות, הסיכום יופיע כאן.';$('#jlist').innerHTML='';return}
+    const T={spent:0,open:0,real:0,unreal:0,wins:0,losses:0};
+    syms.forEach(s=>{const x=by[s];x.unreal=x.unreal||0;x.open=x.open||0;T.spent+=x.spent;T.open+=x.open;T.real+=x.real;T.unreal+=x.unreal;T.wins+=x.wins;T.losses+=x.losses});
+    const tot=T.real+T.unreal,closed=T.wins+T.losses,pct=T.spent>0?tot/T.spent*100:0;
+    const row=(l,v,c)=>`<div class="t" style="padding:5px 0"><span class="m">${l}</span><b class="num ${c||''}">${v}</b></div>`;
+    $('#jsum').innerHTML=
+      `<div class="t"><b>סה"כ רווח / הפסד</b><b class="num ${cl(tot)}" style="font-size:1.3rem">${sg(tot)}</b></div><div class="m num ${cl(tot)}" style="text-align:left">${pct>=0?'+':''}${pct.toFixed(1)}% מסך הקניות</div><hr style="border:0;border-top:1px solid var(--line);margin:8px 0">`+
+      row('כמה שמת בסך הכול',money(T.spent))+row('מושקע כרגע (פוזיציות פתוחות)',money(T.open))+
+      row('רווח / הפסד ממומש (עסקאות שנסגרו)',sg(T.real),cl(T.real))+row('רווח / הפסד לא ממומש (פתוח)',sg(T.unreal),cl(T.unreal))+
+      row('עסקאות סגורות',closed?closed+' · '+Math.round(T.wins/closed*100)+'% ברווח':'עוד אין');
+    $('#jlist').innerHTML=syms.sort((a,b)=>(by[b].real+by[b].unreal)-(by[a].real+by[a].unreal)).map(s=>{const x=by[s],t=x.real+x.unreal;
+      return `<div class="card"><div class="t"><b>${esc(s)}</b><b class="num ${cl(t)}">${sg(t)}</b></div><div class="m">נקנה ${money(x.spent)} · פתוח ${money(x.open)}<br>ממומש <span class="${cl(x.real)}">${sg(x.real)}</span> · לא ממומש <span class="${cl(x.unreal)}">${sg(x.unreal)}</span></div></div>`}).join('');
+  }catch(e){$('#jsum').textContent='אין חיבור ליומן (רשת או חסימת דפדפן)'}
+}
 let toastT;function toast(t){if(!t||t==='שולח…')return;const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>{e.style.display='none'},8000)}
 try{new MutationObserver(()=>toast($('#tmsg').textContent)).observe($('#tmsg'),{childList:true,characterData:true,subtree:true})}catch(e){}
 $('#toast').onclick=()=>{$('#toast').style.display='none'};
