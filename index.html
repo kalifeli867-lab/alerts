@@ -34,11 +34,13 @@ details{background:var(--card);border:1px solid var(--line);border-radius:12px;p
 summary{cursor:pointer;font-weight:700}
 label{display:block;margin-top:10px;font-size:.9rem;color:var(--mute)}label input{width:100%;margin-top:4px}label select{width:100%;margin-top:4px}
 .al{border-inline-start:3px solid var(--up)}
+#toast{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);background:var(--card);border:1px solid var(--acc);color:var(--ink);border-radius:12px;padding:12px 14px;z-index:50;display:none;text-align:right;box-shadow:0 4px 20px rgba(0,0,0,.45)}
 .sc{display:inline-block;min-width:44px;text-align:center;border-radius:8px;padding:2px 8px;font-weight:700;color:#04111f}.sh{background:var(--up)}.sm{background:#f5c451}.sl{background:var(--line);color:var(--mute)}
 a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 </style>
 </head>
 <body>
+<div id="toast" role="status"></div>
 <main>
 <div class="top"><div><h1>התראות עלייה</h1><div class="st" id="st">מושהה</div></div><button id="go">הפעל ניטור</button></div>
 
@@ -298,6 +300,9 @@ async function cancelAll(){
   msg.textContent='שולח…';
   try{const r=await pReq('/orders','DELETE');msg.textContent=r.ok?'כל ההזמנות הפתוחות בוטלו':'הביטול נדחה ('+r.status+')';loadPaper()}
   catch(e){msg.textContent='אין חיבור לביטול (רשת או חסימת דפדפן)'}}
+let toastT;function toast(t){if(!t||t==='שולח…')return;const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>{e.style.display='none'},8000)}
+try{new MutationObserver(()=>toast($('#tmsg').textContent)).observe($('#tmsg'),{childList:true,characterData:true,subtree:true})}catch(e){}
+$('#toast').onclick=()=>{$('#toast').style.display='none'};
 $('#pord').onclick=e=>{const c=e.target.closest('[data-cancel]');if(c){cancelOrder(c.dataset.cancel);return}const d=e.target.closest('[data-edit]');if(d)openEdit(d.dataset.edit)};
 $('#esave').onclick=saveEdit;$('#eclose').onclick=()=>{$('#ebox').style.display='none'};$('#cancelall').onclick=cancelAll;
 $('#tbuy').onclick=()=>placeOrder('buy');
