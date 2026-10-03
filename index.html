@@ -270,6 +270,19 @@ async function saveEdit(){
   if(!confirm('עדכון הזמנה בחשבון דמה (בלי כסף אמיתי)\n'+o.symbol+'\nכמות '+qty+(body.limit_price?'\nLimit '+lp:'')))return;
   msg.textContent='שולח…';
   try{const r=await pReq('/orders/'+encodeURIComponent(editId),'PATCH',body);const j=await r.json().catch(()=>({}));
+    if(!r.ok&&/cannot replace|accepted status/i.test(j.message||'')){
+      if(confirm('אי אפשר לערוך הזמנה בסטטוס accepted (לפני שנשלחה לשוק).\nלבטל אותה ולשלוח הזמנה חדשה עם הערכים החדשים?\n'+o.symbol+' · כמות '+qty+(body.limit_price?' · Limit '+lp:''))){
+        const d=await pReq('/orders/'+encodeURIComponent(editId),'DELETE');
+        if(!(d.ok||d.status===204)){msg.textContent='הביטול נכשל ('+d.status+'), ההזמנה המקורית נשארה';loadPaper();return}
+        const nb={symbol:o.symbol,qty:String(qty),side:o.side,type:o.type,time_in_force:o.time_in_force||'day'};
+        if(o.type==='limit')nb.limit_price=lp;
+        if(o.extended_hours)nb.extended_hours=true;
+        const p=await pReq('/orders','POST',nb);const pj=await p.json().catch(()=>({}));
+        msg.textContent=p.ok?'ההזמנה הוחלפה: הישנה בוטלה והוגשה חדשה':'ההזמנה הישנה בוטלה, אבל החדשה נדחתה: '+(pj.message||p.status);
+        if(p.ok){$('#ebox').style.display='none';editId=null}
+      }else msg.textContent='לא בוצע שינוי';
+      loadPaper();return;
+    }
     msg.textContent=r.ok?'ההזמנה עודכנה':'העדכון נדחה: '+(j.message||r.status);
     if(r.ok){$('#ebox').style.display='none';editId=null}loadPaper()}
   catch(e){msg.textContent='אין חיבור לעדכון הזמנה (רשת או חסימת דפדפן)'}}
