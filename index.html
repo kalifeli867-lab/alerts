@@ -71,7 +71,11 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <div class="m" id="tmsg" style="margin-top:8px"></div></div>
 <h2>פוזיציות</h2><div id="ppos"></div>
 <h2>הזמנות אחרונות</h2><div id="pord"></div>
-<button id="trf" class="g" style="border:1px solid var(--line);color:var(--ink);margin-top:8px">רענן</button>
+<div class="card" id="ebox" style="display:none"><b id="etitle"></b>
+<label>כמות<input id="eqty" type="number" min="1" step="1" inputmode="numeric"></label>
+<label id="elw">מחיר Limit<input id="elim" type="number" step="any" min="0" inputmode="decimal"></label>
+<div class="add" style="margin-top:10px"><button id="esave">שמור שינוי</button><button id="eclose" class="g" style="border:1px solid var(--line);color:var(--ink)">סגור</button></div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button id="trf" class="g" style="border:1px solid var(--line);color:var(--ink)">רענן</button><button id="cancelall" class="g" style="border:1px solid var(--down);color:var(--down)">בטל את כל ההזמנות הפתוחות</button></div>
 
 <details><summary>הגדרות התראה</summary>
 <label>עלייה של לפחות (%)<input id="s1" type="number" step="0.1" min="0.1" inputmode="decimal"></label>
@@ -217,6 +221,7 @@ async function scanNews(){
 $('#ns').onclick=scanNews;$('#nall').onclick=()=>{allMode=!allMode;$('#nall').textContent=allMode?'חזור לחדשות החזקות':'הצג את כל הכתבות';drawNews()};
 setInterval(scanNews,600000);setTimeout(scanNews,600);
 const PAPER='https://paper-api.alpaca.markets/v2';
+let lastOrders=[],editId=null;const OPEN=['new','accepted','pending_new','partially_filled','held','accepted_for_bidding'];
 function pReq(path,method,body){return fetch(PAPER+path,{method:method||'GET',headers:{'APCA-API-KEY-ID':D.kid,'APCA-API-SECRET-KEY':D.sec,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined})}
 const money=n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 async function loadPaper(){
@@ -229,8 +234,8 @@ async function loadPaper(){
     $('#pacc').textContent='מזומן '+money(ac.cash)+' · שווי '+money(ac.equity)+' · כוח קנייה '+money(ac.buying_power);
     const ps=p.ok?await p.json():[];
     $('#ppos').innerHTML=ps.map(x=>`<div class="card t"><div><b>${esc(x.symbol)}</b><div class="m">${esc(x.qty)} מניות · כניסה ${money(x.avg_entry_price)} · עכשיו ${money(x.current_price)}</div></div><span class="num ${Number(x.unrealized_pl)>=0?'up':'dn'}">${money(x.unrealized_pl)} (${(x.unrealized_plpc*100).toFixed(1)}%)</span></div>`).join('')||'<p class="m">אין פוזיציות פתוחות.</p>';
-    const os=o.ok?await o.json():[];
-    $('#pord').innerHTML=os.map(x=>`<div class="card"><b>${x.side==='buy'?'קנייה':'מכירה'} ${esc(x.symbol)}</b> · ${esc(x.qty)} · ${esc(x.type)}${x.limit_price?' '+money(x.limit_price):''}<div class="m">${esc(x.status)}${x.filled_avg_price?' · בוצע ב-'+money(x.filled_avg_price):''} · ${new Date(x.submitted_at).toLocaleString('he-IL')}</div></div>`).join('')||'<p class="m">אין הזמנות.</p>';
+    const os=o.ok?await o.json():[];lastOrders=os;
+    $('#pord').innerHTML=os.map(x=>`<div class="card"><b>${x.side==='buy'?'קנייה':'מכירה'} ${esc(x.symbol)}</b> · ${esc(x.qty)} · ${esc(x.type)}${x.limit_price?' '+money(x.limit_price):''}<div class="m">${esc(x.status)}${x.filled_avg_price?' · בוצע ב-'+money(x.filled_avg_price):''} · ${new Date(x.submitted_at).toLocaleString('he-IL')}</div>${OPEN.includes(x.status)?`<div style="margin-top:8px;display:flex;gap:8px"><button class="g" style="border:1px solid var(--line);color:var(--ink)" data-edit="${esc(x.id)}">ערוך</button><button class="g" style="border:1px solid var(--down);color:var(--down)" data-cancel="${esc(x.id)}">בטל</button></div>`:''}</div>`).join('')||'<p class="m">אין הזמנות.</p>';
   }catch(e){$('#pacc').textContent='אין חיבור לחשבון (רשת או חסימת דפדפן)'}
 }
 async function placeOrder(side){
@@ -251,6 +256,37 @@ async function placeOrder(side){
     loadPaper();
   }catch(e){msg.textContent='אין חיבור לשליחת הזמנה (רשת או חסימת דפדפן)'}
 }
+function openEdit(id){const o=lastOrders.find(x=>x.id===id);if(!o)return;editId=id;
+  $('#etitle').textContent=(o.side==='buy'?'עריכת קנייה ':'עריכת מכירה ')+o.symbol;
+  $('#eqty').value=o.qty;$('#elim').value=o.limit_price||'';
+  $('#elw').style.display=o.type==='limit'?'':'none';
+  $('#ebox').style.display='';$('#ebox').scrollIntoView()}
+async function saveEdit(){
+  const o=lastOrders.find(x=>x.id===editId);if(!o)return;const msg=$('#tmsg');
+  const qty=Number($('#eqty').value),lp=$('#elim').value.trim();
+  if(!(qty>0)||!Number.isInteger(qty)){msg.textContent='הכמות חייבת להיות מספר שלם';return}
+  const body={qty:String(qty)};
+  if(o.type==='limit'){if(!(Number(lp)>0)){msg.textContent='הזן מחיר Limit';return}body.limit_price=lp}
+  if(!confirm('עדכון הזמנה בחשבון דמה (בלי כסף אמיתי)\n'+o.symbol+'\nכמות '+qty+(body.limit_price?'\nLimit '+lp:'')))return;
+  msg.textContent='שולח…';
+  try{const r=await pReq('/orders/'+encodeURIComponent(editId),'PATCH',body);const j=await r.json().catch(()=>({}));
+    msg.textContent=r.ok?'ההזמנה עודכנה':'העדכון נדחה: '+(j.message||r.status);
+    if(r.ok){$('#ebox').style.display='none';editId=null}loadPaper()}
+  catch(e){msg.textContent='אין חיבור לעדכון הזמנה (רשת או חסימת דפדפן)'}}
+async function cancelOrder(id){
+  const o=lastOrders.find(x=>x.id===id),msg=$('#tmsg');
+  if(!confirm('לבטל הזמנה בחשבון דמה?\n'+(o?o.symbol+' · '+o.qty:'')))return;
+  msg.textContent='שולח…';
+  try{const r=await pReq('/orders/'+encodeURIComponent(id),'DELETE');const j=r.status===204?{}:await r.json().catch(()=>({}));
+    msg.textContent=(r.ok||r.status===204)?'ההזמנה בוטלה':'הביטול נדחה: '+(j.message||r.status);loadPaper()}
+  catch(e){msg.textContent='אין חיבור לביטול הזמנה (רשת או חסימת דפדפן)'}}
+async function cancelAll(){
+  const msg=$('#tmsg');if(!confirm('לבטל את כל ההזמנות הפתוחות בחשבון הדמה?'))return;
+  msg.textContent='שולח…';
+  try{const r=await pReq('/orders','DELETE');msg.textContent=r.ok?'כל ההזמנות הפתוחות בוטלו':'הביטול נדחה ('+r.status+')';loadPaper()}
+  catch(e){msg.textContent='אין חיבור לביטול (רשת או חסימת דפדפן)'}}
+$('#pord').onclick=e=>{const c=e.target.closest('[data-cancel]');if(c){cancelOrder(c.dataset.cancel);return}const d=e.target.closest('[data-edit]');if(d)openEdit(d.dataset.edit)};
+$('#esave').onclick=saveEdit;$('#eclose').onclick=()=>{$('#ebox').style.display='none'};$('#cancelall').onclick=cancelAll;
 $('#tbuy').onclick=()=>placeOrder('buy');
 $('#tsell').onclick=()=>placeOrder('sell');
 $('#trf').onclick=loadPaper;
