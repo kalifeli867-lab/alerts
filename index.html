@@ -185,8 +185,8 @@ function pc(s,now){try{const c=s.latestTrade.p,today=dayKey(new Date(now)),db=s.
   if(db&&pb)base=dayKey(new Date(db.t))===today?pb.c:db.c;else if(db)base=dayKey(new Date(db.t))===today?db.o:db.c;else if(pb)base=pb.c;
   return [c,base?(c/base-1)*100:null]}catch(e){return [null,null]}}
 function trLink(a){const t=((a.headline||'')+'\n\n'+(a.summary||'')).slice(0,1500);return `<a href="https://translate.google.com/?sl=en&tl=iw&op=translate&text=${encodeURIComponent(t)}" target="_blank" rel="noopener">תרגם לעברית</a>`}
-let normalHtml='',lastAll=[],allMode=false;
-function allHtml(){return lastAll.slice().sort((x,y)=>new Date(y.a.created_at)-new Date(x.a.created_at)).slice(0,40).map(x=>`<div class="card"><div class="t"><b>${esc(x.sy.join(', '))}</b><span class="sc ${x.s>=60?'sh':x.s>=40?'sm':'sl'}">${x.s}</span></div><div>${esc(x.a.headline||'')}</div><div class="m">${new Date(x.a.created_at).toLocaleString('he-IL')}</div><div>${trLink(x.a)}</div></div>`).join('')||'<p class="m">לא נמצאו כתבות.</p>'}
+let normalHtml='',lastAll=[],allMode=false,skipped={};
+function allHtml(){return lastAll.slice().sort((x,y)=>y.s-x.s||new Date(y.a.created_at)-new Date(x.a.created_at)).slice(0,40).map(x=>{const sk=x.sy.map(t=>skipped[x.a.id+'|'+t]).find(v=>v!==undefined);return `<div class="card"><div class="t"><b>${esc(x.sy.join(', '))}</b><span class="sc ${x.s>=60?'sh':x.s>=40?'sm':'sl'}">${x.s}</span></div><div>${esc(x.a.headline||'')}</div><div class="m">${new Date(x.a.created_at).toLocaleString('he-IL')}</div>${sk!==undefined?`<div class="m" style="color:#f5c451">הציון עובר, אבל המחיר $${sk.toFixed(2)} מעל המגבלה ($${D.maxp})</div>`:''}<div>${trLink(x.a)}</div></div>`}).join('')||'<p class="m">לא נמצאו כתבות.</p>'}
 function drawNews(){$('#news').innerHTML=allMode?allHtml():normalHtml}
 let nFirst=true;const nSeen=new Set();
 async function scanNews(){
@@ -212,9 +212,9 @@ async function scanNews(){
       const r=await fetch('https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols='+encodeURIComponent(syms.slice(i,i+50).join(',')),{headers:H});
       if(r.ok){const j=await r.json();Object.assign(snap,j.snapshots||j)}
     }
-    const out=[];
+    skipped={};const out=[];
     c.forEach(x=>x.sy.forEach(t=>{const [p,ch]=snap[t]?pc(snap[t],now):[null,null];
-      if(p!==null&&p>D.maxp)return;let s=x.s;if(p!==null)s+=p<5?10:p<10?5:0;if(ch!==null&&ch>=10)s+=5;
+      if(p!==null&&p>D.maxp){skipped[x.a.id+'|'+t]=p;return}let s=x.s;if(p!==null)s+=p<5?10:p<10?5:0;if(ch!==null&&ch>=10)s+=5;
       out.push({t,s:Math.min(s,100),p,ch,a:x.a})}));
     out.sort((x,y)=>y.s-x.s||new Date(y.a.created_at)-new Date(x.a.created_at));
     const top=out.slice(0,30);
