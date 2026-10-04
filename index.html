@@ -61,6 +61,16 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <div class="top" style="margin-top:8px"><span class="m" id="ndiag"></span><button id="nall" class="g" style="border:1px solid var(--line);color:var(--ink)">הצג את כל הכתבות</button></div>
 <div id="news"></div>
 
+<h2>סריקת שוק: מחזור חריג וצבירה</h2>
+<p class="m">סורקת את כל מניות NASDAQ, NYSE ו-AMEX (עד המחיר המקסימלי שהגדרת) ומציגה מניות עם מחזור חריג, גם לפני שהמחיר זז. הסריקה לוקחת כחצי דקה וצורכת כמה מגה של נתונים. פועלת בימי חול 11:00 עד 03:00 שעון ישראל.</p>
+<div class="top"><span class="st" id="mkst">לא נסרק עדיין</span><button id="mkgo">סרוק את כל השוק</button></div>
+<div id="mkres"></div>
+
+<h2>איפה הכסף נכנס</h2>
+<p class="m">בכרטיסי המניות שלי מופיע המחזור של היום ביחס לממוצע היומי של 20 ימים. כאן אפשר לסרוק את המניות הפעילות והעולות ביותר בבורסה. מחזור חריג הוא סימן, לא הוכחה שהכסף מגיע ממוסדות.</p>
+<button id="hot">סרוק מניות פעילות</button>
+<div id="hotlist"></div>
+
 <h2 id="trade">מסחר בחשבון דמה (Paper)</h2>
 <p class="m">חשבון דמה בלבד: כל העסקאות כאן בכסף וירטואלי. בדוק כל הזמנה לפני האישור.</p>
 <div class="card"><div class="m" id="pacc">טוען…</div>
@@ -89,8 +99,11 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <label>בתוך חלון זמן (דקות)<input id="s2" type="number" step="1" min="5" inputmode="numeric"></label>
 <label>עלייה יומית גדולה (%)<input id="s3" type="number" step="0.5" min="1" inputmode="decimal"></label>
 <label>חדשות מהשעות האחרונות<input id="s4" type="number" step="1" min="1" max="48" inputmode="numeric"></label>
-<label>מחיר מקסימלי לחדשות ($)<input id="s5" type="number" step="1" min="1" inputmode="decimal"></label>
-<label>ציון מינימלי להצגה (0-100)<input id="s6" type="number" step="5" min="0" max="100" inputmode="numeric"></label></details>
+<label>מחיר מקסימלי (חדשות וסריקת שוק) ($)<input id="s5" type="number" step="1" min="1" inputmode="decimal"></label>
+<label>ציון מינימלי להצגה (0-100)<input id="s6" type="number" step="5" min="0" max="100" inputmode="numeric"></label>
+<label>התראת מחזור חריג: מעל (% מהמחזור היומי הממוצע)<input id="s7" type="number" step="10" min="10" inputmode="numeric"></label>
+<label>סריקת שוק: מחזור יחסי מינימלי (פי כמה מהצפוי)<input id="s8" type="number" step="0.5" min="1" inputmode="decimal"></label>
+<label>סריקת שוק: עלייה מינימלית מהסגירה (%)<input id="s9" type="number" step="0.5" min="0" inputmode="decimal"></label></details>
 
 <h2>התראות אחרונות</h2>
 <div id="log"></div>
@@ -99,7 +112,7 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 </main>
 <script>
 const $=s=>document.querySelector(s);
-const D={kid:'',sec:'',tickers:['NVDA','TSLA','AAPL','AMD','PLTR'],surge:8,win:10,day:20,nh:16,maxp:20,minscore:30,log:[]};
+const D={kid:'',sec:'',tickers:['NVDA','TSLA','AAPL','AMD','PLTR'],surge:8,win:10,day:20,nh:16,maxp:20,minscore:30,vol:100,rv:3,cg:3,log:[]};
 try{Object.assign(D,JSON.parse(localStorage.getItem('sa2')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('sa2',JSON.stringify(D))}catch(e){}};
 const OK=t=>/^[A-Z.\-]{1,8}$/.test(t);
@@ -112,10 +125,10 @@ function render(){
   $('#list').innerHTML=D.tickers.map(t=>{const q=last[t];
     const dp=q?`<span class="${q.dp>=0?'up':'dn'}">${q.dp>=0?'+':''}${(q.dp||0).toFixed(2)}% היום</span>`:'<span class="m">ממתין לנתונים</span>';
     const mv=q&&q.mv!==null?` · <span class="${q.mv>=0?'up':'dn'}">${q.mv>=0?'+':''}${q.mv.toFixed(2)}% ב-${D.win} דק'</span>`:'';
-    return `<div class="card t"><div><b>${t}</b><div class="m">${dp}${mv}${q&&!q.fresh?' · שוק סגור':''}</div></div>
+    return `<div class="card t"><div><b>${t}</b><div class="m">${dp}${mv}${q&&!q.fresh?' · שוק סגור':''}${volRatio[t]!==undefined?' · מחזור '+Math.round(volRatio[t])+'% מהממוצע':''}</div></div>
     <div style="display:flex;align-items:center;gap:6px"><span class="p">${q?'$'+q.c.toFixed(2):'–'}</span><button class="g" data-r="${t}" aria-label="הסר ${t}">✕</button></div></div>`}).join('')||'<p class="m">הוסף מניות למעקב.</p>';
   $('#log').innerHTML=D.log.map(a=>`<div class="card al"><b>${a.title}</b><div>${a.body}</div><div class="m">${new Date(a.ts).toLocaleString('he-IL')}</div></div>`).join('')||'<p class="m">עוד אין התראות.</p>';
-  $('#kid').value=D.kid;$('#sec').value=D.sec;$('#s1').value=D.surge;$('#s2').value=D.win;$('#s3').value=D.day;$('#s4').value=D.nh;$('#s5').value=D.maxp;$('#s6').value=D.minscore;
+  $('#kid').value=D.kid;$('#sec').value=D.sec;$('#s1').value=D.surge;$('#s2').value=D.win;$('#s3').value=D.day;$('#s4').value=D.nh;$('#s5').value=D.maxp;$('#s6').value=D.minscore;$('#s7').value=D.vol;$('#s8').value=D.rv;$('#s9').value=D.cg;
 }
 function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(a.currentTime+.4)}catch(e){}}
 async function notify(title,body,tag){
@@ -177,7 +190,7 @@ $('#sk').onclick=()=>{D.kid=$('#kid').value.trim();D.sec=$('#sec').value.trim();
 $('#na').onclick=()=>{const t=$('#nt').value.trim().toUpperCase();if(!OK(t)||D.tickers.includes(t)||D.tickers.length>=50)return;D.tickers.push(t);$('#nt').value='';save();render();if(on)poll()};
 $('#nt').onkeydown=e=>{if(e.key==='Enter')$('#na').click()};
 $('#list').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;D.tickers=D.tickers.filter(x=>x!==b.dataset.r);save();render()};
-[['s1','surge'],['s2','win'],['s3','day'],['s4','nh'],['s5','maxp'],['s6','minscore']].forEach(([i,k])=>$('#'+i).onchange=()=>{const v=parseFloat($('#'+i).value);if(v>0){D[k]=v;save()}render()});
+[['s1','surge'],['s2','win'],['s3','day'],['s4','nh'],['s5','maxp'],['s6','minscore'],['s7','vol'],['s8','rv'],['s9','cg']].forEach(([i,k])=>$('#'+i).onchange=()=>{const v=parseFloat($('#'+i).value);if(v>0){D[k]=v;save()}render()});
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const NPOS=[[/fda (approv|clear)|approval from the fda|510\(k\)|breakthrough (therapy )?designation|fast track/,35],[/phase (2|3|ii|iii).{0,60}(met|positive|success|primary endpoint)|positive (topline|top-line|data|results)/,35],[/definitive (merger )?agreement|to be acquired|buyout|takeover|tender offer|go-private/,40],[/(awarded|wins?|secures?|receives?|signs?).{0,40}(contract|purchase order|order)/,25],[/partnership|partners? with|partnered|collaborat|strategic agreement|license agreement|letter of intent/,15],[/nvidia|microsoft|google|amazon|apple|openai|pentagon|department of defense|u\.s\. army|nasa/,10,1],[/uplist|nasdaq listing|short squeeze|record (revenue|sales)|raises (full-year )?guidance|patent (granted|issued)/,15],[/\bai\b|quantum|crypto|bitcoin|treasury strategy|robotics/,5,1]];
 const NNEG=/offering|dilut|warrant|private placement|reverse (stock )?split|going concern|delist|bankruptcy|sec investigation|class action|downgrade|misses|withdraw|trading halt|halt news|lawsuit|plunge|tumble|slump|short seller|short report|recall|subpoena|fraud|resigns|deficiency|non-compliance|probe|investigation/;
@@ -347,6 +360,132 @@ async function loadJournal(){
       return `<div class="card"><div class="t"><b>${esc(s)}</b><b class="num ${cl(t)}">${sg(t)}</b></div><div class="m">נקנה ${money(x.spent)} · פתוח ${money(x.open)}<br>ממומש <span class="${cl(x.real)}">${sg(x.real)}</span> · לא ממומש <span class="${cl(x.unreal)}">${sg(x.unreal)}</span></div></div>`}).join('');
   }catch(e){$('#jsum').textContent='אין חיבור ליומן (רשת או חסימת דפדפן)'}
 }
+let avgVol={},avgAt=0,volRatio={};
+const HDR=()=>({'APCA-API-KEY-ID':D.kid,'APCA-API-SECRET-KEY':D.sec});
+function etStart(){const n=new Date(),o=et(n);let t=Date.UTC(+o.year,+o.month-1,+o.day,8,0);for(let k=0;k<3;k++){const h=+et(new Date(t)).hour%24;if(h===4)break;t+=(4-h)*3600000}return new Date(t)}
+async function getBars(syms,tf,start){
+  const bars={};let tok=null;
+  for(let i=0;i<6;i++){
+    const r=await fetch('https://data.alpaca.markets/v2/stocks/bars?symbols='+encodeURIComponent(syms.join(','))+'&timeframe='+tf+'&start='+encodeURIComponent(start)+'&limit=10000&feed=iex&adjustment=raw'+(tok?'&page_token='+encodeURIComponent(tok):''),{headers:HDR()});
+    if(!r.ok)return null;const j=await r.json();
+    Object.entries(j.bars||{}).forEach(([s,a])=>{(bars[s]=bars[s]||[]).push(...a)});
+    tok=j.next_page_token;if(!tok)break;
+  }
+  return bars;
+}
+async function volScan(){
+  if(!D.kid||!D.sec||!D.tickers.length)return;
+  try{
+    const syms=D.tickers.slice(0,30),now=Date.now();
+    if(now-avgAt>1800000){
+      const b=await getBars(syms,'1Day',new Date(now-40*86400000).toISOString().slice(0,10));
+      if(b){const today=dayKey(new Date());avgVol={};
+        syms.forEach(s=>{const a=(b[s]||[]).filter(x=>dayKey(new Date(x.t))!==today).slice(-20);if(a.length>=5)avgVol[s]=a.reduce((p,x)=>p+x.v,0)/a.length});
+        avgAt=now}
+    }
+    const st=etStart();volRatio={};
+    if(now>=st.getTime()){
+      const b=await getBars(syms,'5Min',st.toISOString());
+      if(b)syms.forEach(s=>{const v=(b[s]||[]).reduce((p,x)=>p+x.v,0);if(avgVol[s]&&v>0)volRatio[s]=v/avgVol[s]*100});
+    }
+    if(on&&sessionOpen(new Date())){
+      Object.entries(volRatio).forEach(([s,r])=>{const q=last[s];
+        if(r>=D.vol&&q&&q.dp>=1)fire(s,'💰 מחזור חריג',`${s}: נסחר היום ${Math.round(r)}% מהמחזור היומי הממוצע, והמחיר ${q.dp>=0?'+':''}${q.dp.toFixed(1)}% מהסגירה. מחיר $${q.c.toFixed(2)}`)});
+    }
+    render();
+  }catch(e){}
+}
+async function hotScan(){
+  const box=$('#hotlist');box.innerHTML='<p class="m">סורק…</p>';
+  if(!D.kid||!D.sec){box.innerHTML='<p class="m">הוסף מפתחות Alpaca קודם.</p>';return}
+  try{
+    const [a,m]=await Promise.all([
+      fetch('https://data.alpaca.markets/v1beta1/screener/stocks/most-actives?by=volume&top=20',{headers:HDR()}),
+      fetch('https://data.alpaca.markets/v1beta1/screener/stocks/movers?top=20',{headers:HDR()})]);
+    let html='';
+    if(m.ok){const j=await m.json();const g=(j.gainers||[]).filter(x=>x.price<=D.maxp).slice(0,12);
+      html+='<div class="m" style="margin:8px 0"><b>העולות ביותר (עד $'+D.maxp+')</b></div>'+(g.map(x=>`<div class="card t"><div><b>${esc(x.symbol)}</b><div class="m">$${Number(x.price).toFixed(2)}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="num up">+${Number(x.percent_change).toFixed(1)}%</span><button class="g" style="border:1px solid var(--line);color:var(--ink)" data-addt="${esc(x.symbol)}">+ מעקב</button></div></div>`).join('')||'<p class="m">אין מניות בטווח המחיר.</p>')}
+    else html+='<p class="m">רשימת העולות לא זמינה (קוד '+m.status+').</p>';
+    if(a.ok){const j=await a.json();const l=(j.most_actives||[]).slice(0,12);
+      html+='<div class="m" style="margin:12px 0 8px"><b>הנסחרות ביותר (לפי מחזור)</b></div>'+(l.map(x=>`<div class="card t"><div><b>${esc(x.symbol)}</b><div class="m">${Number(x.volume).toLocaleString('en-US')} מניות · ${Number(x.trade_count).toLocaleString('en-US')} עסקאות</div></div><button class="g" style="border:1px solid var(--line);color:var(--ink)" data-addt="${esc(x.symbol)}">+ מעקב</button></div>`).join('')||'<p class="m">אין נתונים.</p>')}
+    else html+='<p class="m">רשימת הנסחרות ביותר לא זמינה (קוד '+a.status+').</p>';
+    box.innerHTML=html;
+  }catch(e){box.innerHTML='<p class="m">אין חיבור לרשימות (רשת או חסימת דפדפן).</p>'}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-addt]');if(!b)return;const t=b.dataset.addt;if(OK(t)&&!D.tickers.includes(t)&&D.tickers.length<50){D.tickers.push(t);save();avgAt=0;render();volScan();toast(t+' נוסף למעקב')}});
+$('#hot').onclick=hotScan;
+setTimeout(volScan,1500);setInterval(volScan,60000);
+function sessFrac(now){const o=et(now);if(o.weekday==='Sat'||o.weekday==='Sun')return null;const m=(+o.hour%24)*60+(+o.minute);if(m<240||m>=1200)return null;if(m<570)return 0.06;if(m>=960)return 1;return 0.06+0.94*Math.pow((m-570)/390,0.7)}
+function scoreText(t){t=t.toLowerCase();let s=0,cx=0;NPOS.forEach(([p,w,ctx])=>{if(p.test(t)){if(ctx)cx+=w;else s+=w}});if(s>0)s+=cx;s=Math.min(s,90);if(NNEG.test(t))s=0;return s}
+async function pool(items,n,fn){let i=0;await Promise.all(Array.from({length:n},async()=>{while(i<items.length){const k=i++;try{await fn(items[k])}catch(e){}}}))}
+async function loadSymbols(){
+  const today=dayKey(new Date());
+  try{const c=JSON.parse(localStorage.getItem('sa_assets')||'null');if(c&&c.d===today&&c.s&&c.s.length>1000)return c.s}catch(e){}
+  const r=await pReq('/assets?status=active&asset_class=us_equity');
+  if(!r.ok)throw new Error('assets '+r.status);
+  const a=await r.json();
+  const s=[...new Set(a.filter(x=>x.tradable&&['NASDAQ','NYSE','AMEX'].includes(x.exchange)&&/^[A-Z]{1,5}$/.test(x.symbol)).map(x=>x.symbol))].sort();
+  try{localStorage.setItem('sa_assets',JSON.stringify({d:today,s}))}catch(e){}
+  return s;
+}
+async function marketScan(){
+  const box=$('#mkres'),st=$('#mkst'),btn=$('#mkgo');
+  if(!D.kid||!D.sec){st.textContent='הוסף מפתחות Alpaca קודם';return}
+  const now=(typeof window!=='undefined'&&window.__now)||new Date(),frac=sessFrac(now);
+  if(frac===null){st.textContent='השוק סגור: הסריקה פועלת בימי חול 11:00 עד 03:00 שעון ישראל';box.innerHTML='';return}
+  btn.disabled=true;box.innerHTML='';
+  try{
+    st.textContent='טוען רשימת מניות…';
+    const syms=await loadSymbols();
+    const chunks=[];for(let i=0;i<syms.length;i+=200)chunks.push(syms.slice(i,i+200));
+    let done=0;const snap={};
+    await pool(chunks,6,async ch=>{
+      const r=await fetch('https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols='+encodeURIComponent(ch.join(',')),{headers:HDR()});
+      if(r.ok){const j=await r.json();Object.assign(snap,j.snapshots||j)}
+      done++;st.textContent='סורק '+syms.length+' מניות… '+Math.round(done/chunks.length*100)+'%';
+    });
+    const today=dayKey(now),cands=[];
+    for(const [s,v] of Object.entries(snap)){
+      if(!v||!v.latestTrade)continue;
+      const [p,chg]=pc(v,now.getTime());
+      if(p===null||chg===null||p<0.5||p>D.maxp)continue;
+      if(now-new Date(v.latestTrade.t)>3600000)continue;
+      const db=v.dailyBar,pb=v.prevDailyBar;
+      const early=!!(db&&pb&&pb.v>0&&dayKey(new Date(db.t))===today&&db.v>=2*pb.v&&chg>=0);
+      if(chg>=D.cg||early)cands.push({s,p,chg});
+    }
+    cands.sort((a,b)=>b.chg-a.chg);const top=cands.slice(0,80),tl=top.map(x=>x.s);
+    st.textContent='בודק מחזור ל-'+top.length+' מועמדות…';
+    const daily=tl.length?(await getBars(tl,'1Day',new Date(now-40*864e5).toISOString().slice(0,10)))||{}:{};
+    const intra=tl.length?(await getBars(tl,'5Min',etStart().toISOString()))||{}:{};
+    const res=[];
+    for(const c of top){
+      const hist=(daily[c.s]||[]).filter(b=>dayKey(new Date(b.t))!==today);
+      if(hist.length<8)continue;
+      const l20=hist.slice(-20),avg=l20.reduce((p,b)=>p+b.v,0)/l20.length;
+      const vol=(intra[c.s]||[]).reduce((p,b)=>p+b.v,0);
+      if(avg<20000||vol<5000)continue;
+      const rvol=vol/(avg*frac);if(rvol<D.rv)continue;
+      let acc=0;hist.slice(-10).forEach(b=>{const r=b.h-b.l;if(r>0&&b.v>=1.5*avg&&(b.c-b.l)/r>=0.7)acc++});
+      res.push({...c,avg,vol,rvol,acc});
+    }
+    res.sort((a,b)=>b.rvol-a.rvol);const fin=res.slice(0,25),nw={};
+    if(fin.length){
+      try{const since=new Date(now-86400000).toISOString().replace(/\.\d+Z$/,'Z');
+        const r=await fetch('https://data.alpaca.markets/v1beta1/news?limit=50&sort=desc&start='+since+'&symbols='+encodeURIComponent(fin.map(x=>x.s).join(',')),{headers:HDR()});
+        if(r.ok){const j=await r.json();(j.news||[]).forEach(a=>{const sc=scoreText((a.headline||'')+' '+(a.summary||''));(a.symbols||[]).forEach(q=>{if(!nw[q]||nw[q].sc<sc)nw[q]={sc,h:a.headline||'',a}})})}}catch(e){}
+    }
+    const bt='border:1px solid var(--line);color:var(--ink)';
+    const card=x=>{const n=nw[x.s];
+      const nl=n?(n.sc>=30?`<div style="margin-top:6px">📰 ${esc(n.h)} ${trLink(n.a)}</div>`:`<div class="m" style="margin-top:6px">📰 ${esc(n.h)} (ציון ${n.sc})</div>`):`<div class="m" style="margin-top:6px;color:#f5c451">⚠️ אין חדשה ידועה: יכול להיות סימן מוקדם, אבל גם ניפוח</div>`;
+      return `<div class="card"><div class="t"><b>${esc(x.s)}</b><span class="num ${x.chg>=0?'up':'dn'}">${x.chg>=0?'+':''}${x.chg.toFixed(1)}%</span></div><div class="m">$${x.p.toFixed(2)}${x.p<1?' · מניית פני, סיכון גבוה':''}<br>מחזור פי ${x.rvol.toFixed(1)} מהצפוי לשעה · ${Math.round(x.vol).toLocaleString('en-US')} מול ממוצע ${Math.round(x.avg).toLocaleString('en-US')} ליום (IEX)<br>ימי צבירה ב-10 ימים: ${x.acc}/10</div>${nl}<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="${bt}" data-addt="${esc(x.s)}">+ מעקב</button><button class="g" style="${bt}" data-buy="${esc(x.s)}">קנה בפייפר</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(x.s)}&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div>`};
+    const hi=fin.filter(x=>x.chg>=D.cg),ea=fin.filter(x=>x.chg<D.cg);
+    box.innerHTML=(hi.length?'<div class="m" style="margin:8px 0"><b>💰 מחזור חריג ועלייה</b></div>'+hi.map(card).join(''):'')+(ea.length?'<div class="m" style="margin:12px 0 8px"><b>👀 מחזור עולה לפני תנועת מחיר</b></div>'+ea.map(card).join(''):'')||'<p class="m">לא נמצאו מניות עם מחזור חריג כרגע.</p>';
+    st.textContent=`נסרקו ${Object.keys(snap).length} מניות · ${cands.length} מועמדות · ${fin.length} עם מחזור חריג · ${new Date().toLocaleTimeString('he-IL')}`;
+  }catch(e){st.textContent='הסריקה נכשלה: '+(e&&e.message?e.message:'רשת או חסימת דפדפן')}
+  finally{btn.disabled=false}
+}
+$('#mkgo').onclick=marketScan;
 let toastT;function toast(t){if(!t||t==='שולח…')return;const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>{e.style.display='none'},8000)}
 try{new MutationObserver(()=>toast($('#tmsg').textContent)).observe($('#tmsg'),{childList:true,characterData:true,subtree:true})}catch(e){}
 $('#toast').onclick=()=>{$('#toast').style.display='none'};
