@@ -505,7 +505,7 @@ async function marketScan(){
     }
     res.sort((a,b)=>b.rvol-a.rvol);const fin=res.slice(0,25),nw={};
     if(fin.length){
-      try{const since=new Date(now-86400000).toISOString().replace(/\.\d+Z$/,'Z');
+      try{const since=new Date(now-(live?86400000:4*86400000)).toISOString().replace(/\.\d+Z$/,'Z');
         const r=await fetch('https://data.alpaca.markets/v1beta1/news?limit=50&sort=desc&start='+since+'&symbols='+encodeURIComponent(fin.map(x=>x.s).join(',')),{headers:HDR()});
         if(r.ok){const j=await r.json();(j.news||[]).forEach(a=>{const sc=scoreText((a.headline||'')+' '+(a.summary||''));(a.symbols||[]).forEach(q=>{if(!nw[q]||nw[q].sc<sc)nw[q]={sc,h:a.headline||'',a}})})}}catch(e){}
     }
