@@ -450,6 +450,7 @@ async function loadSymbols(){
   return s;
 }
 const isSpecial=s=>/^[A-Z]{4}[WRU]$/.test(s);
+const ROUNDUP=/stocks moving|movers|moving (in|pre)|stocks to watch|stocks that|here are \d+|biggest (gainers|losers)|top gainers|premarket (movers|session)/i;
 async function marketScan(){
   const box=$('#mkres'),st=$('#mkst'),btn=$('#mkgo');
   if(!D.kid||!D.sec){st.textContent='הוסף מפתחות Alpaca קודם';return}
@@ -507,11 +508,11 @@ async function marketScan(){
     if(fin.length){
       try{const since=new Date(now-(live?86400000:4*86400000)).toISOString().replace(/\.\d+Z$/,'Z');
         const r=await fetch('https://data.alpaca.markets/v1beta1/news?limit=50&sort=desc&start='+since+'&symbols='+encodeURIComponent(fin.map(x=>x.s).join(',')),{headers:HDR()});
-        if(r.ok){const j=await r.json();(j.news||[]).forEach(a=>{const sc=scoreText((a.headline||'')+' '+(a.summary||''));(a.symbols||[]).forEach(q=>{if(!nw[q]||nw[q].sc<sc)nw[q]={sc,h:a.headline||'',a}})})}}catch(e){}
+        if(r.ok){const j=await r.json();(j.news||[]).forEach(a=>{if((a.symbols||[]).length>3||ROUNDUP.test(a.headline||''))return;const sc=scoreText((a.headline||'')+' '+(a.summary||''));(a.symbols||[]).forEach(q=>{if(!nw[q]||nw[q].sc<sc)nw[q]={sc,h:a.headline||'',a}})})}}catch(e){}
     }
     const bt='border:1px solid var(--line);color:var(--ink)';
     const card=x=>{const n=nw[x.s];
-      const nl=n?(n.sc>=30?`<div style="margin-top:6px">📰 ${esc(n.h)} ${trLink(n.a)}</div>`:`<div class="m" style="margin-top:6px">📰 ${esc(n.h)} (ציון ${n.sc})</div>`):`<div class="m" style="margin-top:6px;color:#f5c451">⚠️ אין חדשה ידועה: יכול להיות סימן מוקדם, אבל גם ניפוח</div>`;
+      const nl=n?(n.sc>=30?`<div style="margin-top:6px">📰 ${esc(n.h)} ${trLink(n.a)}</div>`:`<div class="m" style="margin-top:6px">📰 ${esc(n.h)} (ציון ${n.sc})</div>`):`<div class="m" style="margin-top:6px;color:#f5c451">⚠️ אין חדשה ספציפית ידועה לחברה: יכול להיות סימן מוקדם, אבל גם ניפוח</div>`;
       return `<div class="card"><div class="t"><b>${esc(x.s)}</b><span class="num ${x.chg>=0?'up':'dn'}">${x.chg>=0?'+':''}${x.chg.toFixed(1)}%</span></div><div class="m">$${x.p.toFixed(2)}${x.p<1?' · מניית פני, סיכון גבוה':''}<br>מחזור פי ${x.rvol.toFixed(1)} מ${live?'הצפוי לשעה':'הממוצע היומי'} · ${Math.round(x.vol).toLocaleString('en-US')} מול ממוצע ${Math.round(x.avg).toLocaleString('en-US')} ליום (IEX)<br>ימי צבירה ב-10 ימים: ${x.acc}/10</div>${nl}<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="${bt}" data-addt="${esc(x.s)}">+ מעקב</button><button class="g" style="${bt}" data-buy="${esc(x.s)}">קנה בפייפר</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(x.s)}&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div>`};
     const hi=fin.filter(x=>x.chg>=D.cg),ea=fin.filter(x=>x.chg<D.cg);
     box.innerHTML=(hi.length?'<div class="m" style="margin:8px 0"><b>💰 מחזור חריג ועלייה</b></div>'+hi.map(card).join(''):'')+(ea.length?'<div class="m" style="margin:12px 0 8px"><b>👀 מחזור עולה לפני תנועת מחיר</b></div>'+ea.map(card).join(''):'')||'<p class="m">לא נמצאו מניות עם מחזור חריג כרגע.</p>';
