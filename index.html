@@ -34,6 +34,7 @@ details{background:var(--card);border:1px solid var(--line);border-radius:12px;p
 summary{cursor:pointer;font-weight:700}
 label{display:block;margin-top:10px;font-size:.9rem;color:var(--mute)}label input{width:100%;margin-top:4px}label select{width:100%;margin-top:4px}
 .al{border-inline-start:3px solid var(--up)}
+#qnav{position:sticky;top:0;z-index:20;display:flex;gap:6px;overflow-x:auto;padding:8px 0;background:var(--bg)}#qnav a{padding:6px 12px;border:1px solid var(--line);border-radius:16px;color:var(--ink);text-decoration:none;white-space:nowrap;font-size:.9rem}
 #toast{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);background:var(--card);border:1px solid var(--acc);color:var(--ink);border-radius:12px;padding:12px 14px;z-index:50;display:none;text-align:right;box-shadow:0 4px 20px rgba(0,0,0,.45)}
 .sc{display:inline-block;min-width:44px;text-align:center;border-radius:8px;padding:2px 8px;font-weight:700;color:#04111f}.sh{background:var(--up)}.sm{background:#f5c451}.sl{background:var(--line);color:var(--mute)}
 a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
@@ -43,6 +44,7 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <div id="toast" role="status"></div>
 <main>
 <div class="top"><div><h1>התראות עלייה</h1><div class="st" id="st">מושהה</div></div><button id="go">הפעל ניטור</button></div>
+<nav id="qnav"><a href="#sec-watch">מניות</a><a href="#sec-news">חדשות</a><a href="#sec-mkt">סריקת שוק</a><a href="#trade">מסחר</a><a href="#sec-jrn">יומן</a></nav>
 
 <details id="setup"><summary>חיבור לנתוני בורסה (Alpaca)</summary>
 <p><b>ארבעה צעדים:</b> 1) לחץ על הקישור והירשם בחינם, בחר חשבון Paper (בלי כסף אמיתי). 2) בלוח הבקרה חפש API Keys ולחץ Generate. 3) העתק את Key ID ואת Secret (ה-Secret מוצג פעם אחת בלבד). 4) הדבק כאן ולחץ "שמור מפתחות".</p>
@@ -51,18 +53,18 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <p class="m"><a href="https://app.alpaca.markets/signup" target="_blank" rel="noopener">הרשמה חינמית ב-Alpaca</a></p>
 <button id="sk">שמור מפתחות</button></details>
 
-<h2>המניות שלי</h2>
+<h2 id="sec-watch">המניות שלי</h2>
 <div id="list"></div>
 <div class="add"><input id="nt" dir="ltr" placeholder="סימול, למשל MSFT" autocapitalize="characters" maxlength="8"><button id="na">הוסף</button></div>
 
-<h2>חדשות לפני הפתיחה</h2>
+<h2 id="sec-news">חדשות לפני הפתיחה</h2>
 <div class="top"><span class="st" id="nst">לא נסרק עדיין</span><button id="ns">סרוק עכשיו</button></div>
 <p class="m">הציון (0-100) הוא הערכה לפי סוג החדשה ומחיר המניה, ולא סיכוי מדויק לקפיצה.</p>
 <div class="top" style="margin-top:8px"><span class="m" id="ndiag"></span><button id="nall" class="g" style="border:1px solid var(--line);color:var(--ink)">הצג את כל הכתבות</button></div>
 <div id="news"></div>
 
-<h2>סריקת שוק: מחזור חריג וצבירה</h2>
-<p class="m">סורקת את כל מניות NASDAQ, NYSE ו-AMEX (עד המחיר המקסימלי שהגדרת) ומציגה מניות עם מחזור חריג, גם לפני שהמחיר זז. הסריקה לוקחת כחצי דקה וצורכת כמה מגה של נתונים. פועלת בימי חול 11:00 עד 03:00 שעון ישראל.</p>
+<h2 id="sec-mkt">סריקת שוק: מחזור חריג וצבירה</h2>
+<p class="m">סורקת את כל מניות NASDAQ, NYSE ו-AMEX (עד המחיר המקסימלי שהגדרת) ומציגה מניות עם מחזור חריג, גם לפני שהמחיר זז. הסריקה לוקחת כחצי דקה וצורכת כמה מגה של נתונים. בשעות המסחר (בערך 11:00 עד 03:00 בישראל) היא בודקת את הרגע הנוכחי, ומחוץ להן היא מציגה את הסשן האחרון.</p>
 <div class="top"><span class="st" id="mkst">לא נסרק עדיין</span><button id="mkgo">סרוק את כל השוק</button></div>
 <div id="mkres"></div>
 
@@ -78,6 +80,8 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <label>כמות (מספר שלם)<input id="tqty" type="number" min="1" step="1" inputmode="numeric" value="1"></label>
 <label>סוג הזמנה<select id="ttype"><option value="market">Market (מיידי)</option><option value="limit">Limit (מחיר מקסימלי)</option></select></label>
 <label>מחיר Limit<input id="tlim" type="number" step="any" min="0" inputmode="decimal" placeholder="רק ב-Limit או במסחר מורחב"></label>
+<label>סטופ לוס ($, אופציונלי, בקנייה)<input id="tstop" type="number" step="any" min="0" inputmode="decimal" placeholder="מכירה אוטומטית אם המחיר יורד לכאן"></label>
+<label>יעד רווח ($, אופציונלי, בקנייה)<input id="ttp" type="number" step="any" min="0" inputmode="decimal" placeholder="מכירה אוטומטית אם המחיר עולה לכאן"></label>
 <label style="display:flex;gap:8px;align-items:center"><input id="text" type="checkbox" style="width:auto;margin:0">מסחר מורחב (מוקדם או מאוחר, דורש מחיר Limit)</label>
 <div class="add" style="margin-top:12px"><button id="tbuy">קנה</button><button id="tsell" class="stop">מכור</button></div>
 <div class="m" id="tmsg" style="margin-top:8px"></div></div>
@@ -89,7 +93,7 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <div class="add" style="margin-top:10px"><button id="esave">שמור שינוי</button><button id="eclose" class="g" style="border:1px solid var(--line);color:var(--ink)">סגור</button></div></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button id="trf" class="g" style="border:1px solid var(--line);color:var(--ink)">רענן</button><button id="cancelall" class="g" style="border:1px solid var(--down);color:var(--down)">בטל את כל ההזמנות הפתוחות</button></div>
 
-<h2>יומן עסקאות</h2>
+<h2 id="sec-jrn">יומן עסקאות</h2>
 <div class="card" id="jsum">טוען…</div>
 <div id="jlist"></div>
 <p class="m">רווח ממומש: עסקאות שנסגרו (חישוב FIFO). רווח לא ממומש: פוזיציות שעדיין פתוחות. חשבון דמה בלבד.</p>
@@ -103,7 +107,9 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 <label>ציון מינימלי להצגה (0-100)<input id="s6" type="number" step="5" min="0" max="100" inputmode="numeric"></label>
 <label>התראת מחזור חריג: מעל (% מהמחזור היומי הממוצע)<input id="s7" type="number" step="10" min="10" inputmode="numeric"></label>
 <label>סריקת שוק: מחזור יחסי מינימלי (פי כמה מהצפוי)<input id="s8" type="number" step="0.5" min="1" inputmode="decimal"></label>
-<label>סריקת שוק: עלייה מינימלית מהסגירה (%)<input id="s9" type="number" step="0.5" min="0" inputmode="decimal"></label></details>
+<label>סריקת שוק: עלייה מינימלית מהסגירה (%)<input id="s9" type="number" step="0.5" min="0" inputmode="decimal"></label>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button id="bkp" class="g" style="border:1px solid var(--line);color:var(--ink)">גיבוי הגדרות (העתק)</button><button id="rst" class="g" style="border:1px solid var(--line);color:var(--ink)">שחזור מגיבוי</button></div>
+<p class="m">הגיבוי כולל את המפתחות. שמור אותו במקום פרטי, למשל הערה נעולה בטלפון, ואם הנתונים יימחקו תוכל לשחזר בלחיצה.</p></details>
 
 <h2>התראות אחרונות</h2>
 <div id="log"></div>
@@ -120,6 +126,7 @@ D.tickers=D.tickers.filter(OK);
 let hist={},last={},cool={},timer=null,wake=null,on=false;
 
 function setSt(t){const s=$('#st');s.textContent=t;s.className='st'+(on?' on':'')}
+function setv(id,v){const e=$(id);if(e&&document.activeElement!==e)e.value=v}
 function render(){
   $('#go').textContent=on?'עצור ניטור':'הפעל ניטור';$('#go').className=on?'stop':'';
   $('#list').innerHTML=D.tickers.map(t=>{const q=last[t];
@@ -128,7 +135,7 @@ function render(){
     return `<div class="card t"><div><b>${t}</b><div class="m">${dp}${mv}${q&&!q.fresh?' · שוק סגור':''}${volRatio[t]!==undefined?' · מחזור '+Math.round(volRatio[t])+'% מהממוצע':''}</div></div>
     <div style="display:flex;align-items:center;gap:6px"><span class="p">${q?'$'+q.c.toFixed(2):'–'}</span><button class="g" data-r="${t}" aria-label="הסר ${t}">✕</button></div></div>`}).join('')||'<p class="m">הוסף מניות למעקב.</p>';
   $('#log').innerHTML=D.log.map(a=>`<div class="card al"><b>${a.title}</b><div>${a.body}</div><div class="m">${new Date(a.ts).toLocaleString('he-IL')}</div></div>`).join('')||'<p class="m">עוד אין התראות.</p>';
-  $('#kid').value=D.kid;$('#sec').value=D.sec;$('#s1').value=D.surge;$('#s2').value=D.win;$('#s3').value=D.day;$('#s4').value=D.nh;$('#s5').value=D.maxp;$('#s6').value=D.minscore;$('#s7').value=D.vol;$('#s8').value=D.rv;$('#s9').value=D.cg;
+  setv('#kid',D.kid);setv('#sec',D.sec);setv('#s1',D.surge);setv('#s2',D.win);setv('#s3',D.day);setv('#s4',D.nh);setv('#s5',D.maxp);setv('#s6',D.minscore);setv('#s7',D.vol);setv('#s8',D.rv);setv('#s9',D.cg);
 }
 function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(a.currentTime+.4)}catch(e){}}
 async function notify(title,body,tag){
@@ -241,7 +248,7 @@ async function scanNews(){
 $('#ns').onclick=scanNews;$('#nall').onclick=()=>{allMode=!allMode;$('#nall').textContent=allMode?'חזור לחדשות החזקות':'הצג את כל הכתבות';drawNews()};
 setInterval(scanNews,600000);setTimeout(scanNews,600);
 const PAPER='https://paper-api.alpaca.markets/v2';
-let lastOrders=[],lastPos=[],editId=null;const OPEN=['new','accepted','pending_new','partially_filled','held','accepted_for_bidding'];
+let lastOrders=[],lastPos=[],editId=null,acct=null;const OPEN=['new','accepted','pending_new','partially_filled','held','accepted_for_bidding'];
 function pReq(path,method,body){return fetch(PAPER+path,{method:method||'GET',headers:{'APCA-API-KEY-ID':D.kid,'APCA-API-SECRET-KEY':D.sec,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined})}
 const money=n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 async function loadPaper(){
@@ -250,7 +257,7 @@ async function loadPaper(){
     const [a,p,o]=await Promise.all([pReq('/account'),pReq('/positions'),pReq('/orders?status=all&limit=10&direction=desc')]);
     if(a.status===401||a.status===403){$('#pacc').textContent='המפתחות לא תקינים (נדרשים מפתחות של חשבון Paper)';return}
     if(!a.ok){$('#pacc').textContent='שגיאה בחשבון ('+a.status+')';return}
-    const ac=await a.json();
+    const ac=await a.json();acct=ac;
     $('#pacc').textContent='מזומן '+money(ac.cash)+' · שווי '+money(ac.equity)+' · כוח קנייה '+money(ac.buying_power);
     const ps=p.ok?await p.json():[];lastPos=ps;
     $('#ppos').innerHTML=ps.map(x=>`<div class="card t"><div><b>${esc(x.symbol)}</b><div class="m">${esc(x.qty)} מניות · כניסה ${money(x.avg_entry_price)} · עכשיו ${money(x.current_price)}</div></div><span class="num ${Number(x.unrealized_pl)>=0?'up':'dn'}">${money(x.unrealized_pl)} (${(x.unrealized_plpc*100).toFixed(1)}%)</span></div>`).join('')||'<p class="m">אין פוזיציות פתוחות.</p>';
@@ -267,7 +274,20 @@ async function placeOrder(side){
   const body={symbol:sym,qty:String(qty),side,type:ext?'limit':type,time_in_force:'day'};
   if(body.type==='limit')body.limit_price=lp;
   if(ext)body.extended_hours=true;
-  const txt=(side==='buy'?'קנייה':'מכירה')+' בחשבון דמה (בלי כסף אמיתי)\n'+qty+' × '+sym+'\n'+(body.type==='limit'?'Limit '+lp:'Market')+(ext?'\nמסחר מורחב':'');
+  const stop=$('#tstop').value.trim(),tp=$('#ttp').value.trim();
+  if(stop||tp){
+    if(side!=='buy'){msg.textContent='סטופ ויעד נתמכים רק בקנייה';return}
+    if(ext){msg.textContent='סטופ ויעד לא נתמכים במסחר מורחב';return}
+    if((stop&&!(Number(stop)>0))||(tp&&!(Number(tp)>0))){msg.textContent='סטופ ויעד חייבים להיות מחיר חיובי';return}
+    if(body.limit_price&&((stop&&Number(stop)>=Number(lp))||(tp&&Number(tp)<=Number(lp)))){msg.textContent='הסטופ חייב להיות מתחת למחיר הקנייה והיעד מעליו';return}
+    body.order_class=(stop&&tp)?'bracket':'oto';
+    if(tp)body.take_profit={limit_price:tp};
+    if(stop)body.stop_loss={stop_price:stop};
+  }
+  let px=Number(lp)||0;
+  if(!px){try{const r=await fetch('https://data.alpaca.markets/v2/stocks/trades/latest?feed=iex&symbols='+encodeURIComponent(sym),{headers:HDR()});if(r.ok){const j=await r.json();px=((j.trades||{})[sym]||{}).p||0}}catch(e){}}
+  const est=px*qty,eq=acct&&Number(acct.equity)||0;
+  const txt=(side==='buy'?'קנייה':'מכירה')+' בחשבון דמה (בלי כסף אמיתי)\n'+qty+' × '+sym+'\n'+(body.type==='limit'?'Limit '+lp:'Market')+(ext?'\nמסחר מורחב':'')+(est?'\nשווי משוער: $'+est.toLocaleString('en-US',{maximumFractionDigits:0}):'')+(stop?'\nסטופ לוס: '+stop:'')+(tp?'\nיעד רווח: '+tp:'')+(est&&eq&&est>0.2*eq?'\n⚠️ יותר מ-20% מהחשבון':'');
   if(!confirm(txt))return;
   msg.textContent='שולח…';
   try{
@@ -375,6 +395,7 @@ async function getBars(syms,tf,start){
 }
 async function volScan(){
   if(!D.kid||!D.sec||!D.tickers.length)return;
+  if(sessFrac(new Date())===null&&!on)return;
   try{
     const syms=D.tickers.slice(0,30),now=Date.now();
     if(now-avgAt>1800000){
@@ -403,10 +424,10 @@ async function hotScan(){
       fetch('https://data.alpaca.markets/v1beta1/screener/stocks/most-actives?by=volume&top=20',{headers:HDR()}),
       fetch('https://data.alpaca.markets/v1beta1/screener/stocks/movers?top=20',{headers:HDR()})]);
     let html='';
-    if(m.ok){const j=await m.json();const g=(j.gainers||[]).filter(x=>x.price<=D.maxp).slice(0,12);
+    if(m.ok){const j=await m.json();const g=(j.gainers||[]).filter(x=>x.price<=D.maxp&&x.price>=0.5&&!isSpecial(x.symbol)).slice(0,12);
       html+='<div class="m" style="margin:8px 0"><b>העולות ביותר (עד $'+D.maxp+')</b></div>'+(g.map(x=>`<div class="card t"><div><b>${esc(x.symbol)}</b><div class="m">$${Number(x.price).toFixed(2)}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="num up">+${Number(x.percent_change).toFixed(1)}%</span><button class="g" style="border:1px solid var(--line);color:var(--ink)" data-addt="${esc(x.symbol)}">+ מעקב</button></div></div>`).join('')||'<p class="m">אין מניות בטווח המחיר.</p>')}
     else html+='<p class="m">רשימת העולות לא זמינה (קוד '+m.status+').</p>';
-    if(a.ok){const j=await a.json();const l=(j.most_actives||[]).slice(0,12);
+    if(a.ok){const j=await a.json();const l=(j.most_actives||[]).filter(x=>!isSpecial(x.symbol)).slice(0,12);
       html+='<div class="m" style="margin:12px 0 8px"><b>הנסחרות ביותר (לפי מחזור)</b></div>'+(l.map(x=>`<div class="card t"><div><b>${esc(x.symbol)}</b><div class="m">${Number(x.volume).toLocaleString('en-US')} מניות · ${Number(x.trade_count).toLocaleString('en-US')} עסקאות</div></div><button class="g" style="border:1px solid var(--line);color:var(--ink)" data-addt="${esc(x.symbol)}">+ מעקב</button></div>`).join('')||'<p class="m">אין נתונים.</p>')}
     else html+='<p class="m">רשימת הנסחרות ביותר לא זמינה (קוד '+a.status+').</p>';
     box.innerHTML=html;
@@ -428,15 +449,15 @@ async function loadSymbols(){
   try{localStorage.setItem('sa_assets',JSON.stringify({d:today,s}))}catch(e){}
   return s;
 }
+const isSpecial=s=>/^[A-Z]{4}[WRU]$/.test(s);
 async function marketScan(){
   const box=$('#mkres'),st=$('#mkst'),btn=$('#mkgo');
   if(!D.kid||!D.sec){st.textContent='הוסף מפתחות Alpaca קודם';return}
-  const now=(typeof window!=='undefined'&&window.__now)||new Date(),frac=sessFrac(now);
-  if(frac===null){st.textContent='השוק סגור: הסריקה פועלת בימי חול 11:00 עד 03:00 שעון ישראל';box.innerHTML='';return}
+  const now=(typeof window!=='undefined'&&window.__now)||new Date(),fr=sessFrac(now),live=fr!==null,frac=live?fr:1;
   btn.disabled=true;box.innerHTML='';
   try{
     st.textContent='טוען רשימת מניות…';
-    const syms=await loadSymbols();
+    const syms=(await loadSymbols()).filter(s=>!isSpecial(s));
     const chunks=[];for(let i=0;i<syms.length;i+=200)chunks.push(syms.slice(i,i+200));
     let done=0;const snap={};
     await pool(chunks,6,async ch=>{
@@ -444,26 +465,39 @@ async function marketScan(){
       if(r.ok){const j=await r.json();Object.assign(snap,j.snapshots||j)}
       done++;st.textContent='סורק '+syms.length+' מניות… '+Math.round(done/chunks.length*100)+'%';
     });
-    const today=dayKey(now),cands=[];
+    const today=dayKey(now),movers=[],others=[];
     for(const [s,v] of Object.entries(snap)){
-      if(!v||!v.latestTrade)continue;
-      const [p,chg]=pc(v,now.getTime());
-      if(p===null||chg===null||p<0.5||p>D.maxp)continue;
-      if(now-new Date(v.latestTrade.t)>3600000)continue;
-      const db=v.dailyBar,pb=v.prevDailyBar;
-      const early=!!(db&&pb&&pb.v>0&&dayKey(new Date(db.t))===today&&db.v>=2*pb.v&&chg>=0);
-      if(chg>=D.cg||early)cands.push({s,p,chg});
+      if(!v||!v.latestTrade||isSpecial(s))continue;
+      const db=v.dailyBar,pb=v.prevDailyBar;let p,chg,early=false;
+      if(live){
+        [p,chg]=pc(v,now.getTime());
+        if(p===null||chg===null||now-new Date(v.latestTrade.t)>3600000)continue;
+        early=!!(db&&pb&&pb.v>0&&dayKey(new Date(db.t))===today&&db.v>=2*pb.v&&chg>=0);
+      }else{
+        if(!db||!pb||!(pb.c>0)||now-new Date(db.t)>6*864e5)continue;
+        p=db.c;chg=(db.c/pb.c-1)*100;early=pb.v>0&&db.v>=2*pb.v&&chg>=0;
+      }
+      if(p<0.5||p>D.maxp)continue;
+      if(chg>=D.cg)movers.push({s,p,chg});else if(early)others.push({s,p,chg});
     }
-    cands.sort((a,b)=>b.chg-a.chg);const top=cands.slice(0,80),tl=top.map(x=>x.s);
+    if(live){
+      try{const r=await fetch('https://data.alpaca.markets/v1beta1/screener/stocks/most-actives?by=volume&top=50',{headers:HDR()});
+        if(r.ok){const j=await r.json(),have=new Set([...movers,...others].map(c=>c.s));
+          (j.most_actives||[]).forEach(x=>{const v=snap[x.symbol];if(!v||!v.latestTrade||have.has(x.symbol)||isSpecial(x.symbol))return;
+            const [p,chg]=pc(v,now.getTime());if(p===null||chg===null||p<0.5||p>D.maxp||chg<0)return;others.push({s:x.symbol,p,chg})})}}catch(e){}
+    }
+    movers.sort((a,b)=>b.chg-a.chg);
+    const top=[...movers.slice(0,60),...others.slice(0,40)],tl=top.map(x=>x.s),cands={length:movers.length+others.length};
     st.textContent='בודק מחזור ל-'+top.length+' מועמדות…';
     const daily=tl.length?(await getBars(tl,'1Day',new Date(now-40*864e5).toISOString().slice(0,10)))||{}:{};
-    const intra=tl.length?(await getBars(tl,'5Min',etStart().toISOString()))||{}:{};
+    const intra=live&&tl.length?(await getBars(tl,'5Min',etStart().toISOString()))||{}:{};
     const res=[];
     for(const c of top){
-      const hist=(daily[c.s]||[]).filter(b=>dayKey(new Date(b.t))!==today);
+      const all=daily[c.s]||[];let hist,vol;
+      if(live){hist=all.filter(b=>dayKey(new Date(b.t))!==today);vol=(intra[c.s]||[]).reduce((p,b)=>p+b.v,0)}
+      else{if(all.length<9)continue;hist=all.slice(0,-1);vol=all[all.length-1].v}
       if(hist.length<8)continue;
       const l20=hist.slice(-20),avg=l20.reduce((p,b)=>p+b.v,0)/l20.length;
-      const vol=(intra[c.s]||[]).reduce((p,b)=>p+b.v,0);
       if(avg<20000||vol<5000)continue;
       const rvol=vol/(avg*frac);if(rvol<D.rv)continue;
       let acc=0;hist.slice(-10).forEach(b=>{const r=b.h-b.l;if(r>0&&b.v>=1.5*avg&&(b.c-b.l)/r>=0.7)acc++});
@@ -478,14 +512,17 @@ async function marketScan(){
     const bt='border:1px solid var(--line);color:var(--ink)';
     const card=x=>{const n=nw[x.s];
       const nl=n?(n.sc>=30?`<div style="margin-top:6px">📰 ${esc(n.h)} ${trLink(n.a)}</div>`:`<div class="m" style="margin-top:6px">📰 ${esc(n.h)} (ציון ${n.sc})</div>`):`<div class="m" style="margin-top:6px;color:#f5c451">⚠️ אין חדשה ידועה: יכול להיות סימן מוקדם, אבל גם ניפוח</div>`;
-      return `<div class="card"><div class="t"><b>${esc(x.s)}</b><span class="num ${x.chg>=0?'up':'dn'}">${x.chg>=0?'+':''}${x.chg.toFixed(1)}%</span></div><div class="m">$${x.p.toFixed(2)}${x.p<1?' · מניית פני, סיכון גבוה':''}<br>מחזור פי ${x.rvol.toFixed(1)} מהצפוי לשעה · ${Math.round(x.vol).toLocaleString('en-US')} מול ממוצע ${Math.round(x.avg).toLocaleString('en-US')} ליום (IEX)<br>ימי צבירה ב-10 ימים: ${x.acc}/10</div>${nl}<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="${bt}" data-addt="${esc(x.s)}">+ מעקב</button><button class="g" style="${bt}" data-buy="${esc(x.s)}">קנה בפייפר</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(x.s)}&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div>`};
+      return `<div class="card"><div class="t"><b>${esc(x.s)}</b><span class="num ${x.chg>=0?'up':'dn'}">${x.chg>=0?'+':''}${x.chg.toFixed(1)}%</span></div><div class="m">$${x.p.toFixed(2)}${x.p<1?' · מניית פני, סיכון גבוה':''}<br>מחזור פי ${x.rvol.toFixed(1)} מ${live?'הצפוי לשעה':'הממוצע היומי'} · ${Math.round(x.vol).toLocaleString('en-US')} מול ממוצע ${Math.round(x.avg).toLocaleString('en-US')} ליום (IEX)<br>ימי צבירה ב-10 ימים: ${x.acc}/10</div>${nl}<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="${bt}" data-addt="${esc(x.s)}">+ מעקב</button><button class="g" style="${bt}" data-buy="${esc(x.s)}">קנה בפייפר</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(x.s)}&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div>`};
     const hi=fin.filter(x=>x.chg>=D.cg),ea=fin.filter(x=>x.chg<D.cg);
     box.innerHTML=(hi.length?'<div class="m" style="margin:8px 0"><b>💰 מחזור חריג ועלייה</b></div>'+hi.map(card).join(''):'')+(ea.length?'<div class="m" style="margin:12px 0 8px"><b>👀 מחזור עולה לפני תנועת מחיר</b></div>'+ea.map(card).join(''):'')||'<p class="m">לא נמצאו מניות עם מחזור חריג כרגע.</p>';
-    st.textContent=`נסרקו ${Object.keys(snap).length} מניות · ${cands.length} מועמדות · ${fin.length} עם מחזור חריג · ${new Date().toLocaleTimeString('he-IL')}`;
+    st.textContent=(live?'':'השוק סגור, מציג את הסשן האחרון · ')+`נסרקו ${Object.keys(snap).length} מניות · ${cands.length} מועמדות · ${fin.length} עם מחזור חריג · ${new Date().toLocaleTimeString('he-IL')}`;
   }catch(e){st.textContent='הסריקה נכשלה: '+(e&&e.message?e.message:'רשת או חסימת דפדפן')}
   finally{btn.disabled=false}
 }
 $('#mkgo').onclick=marketScan;
+$('#bkp').onclick=async()=>{const t=JSON.stringify(D);try{await navigator.clipboard.writeText(t);toast('הגיבוי הועתק. שמור אותו במקום פרטי')}catch(e){prompt('העתק את הגיבוי:',t)}};
+$('#rst').onclick=()=>{const t=prompt('הדבק כאן את הגיבוי');if(!t)return;try{const o=JSON.parse(t);if(!o||typeof o!=='object')throw 0;Object.assign(D,o);D.tickers=(D.tickers||[]).filter(OK);save();render();loadPaper();toast('הגיבוי שוחזר')}catch(e){toast('הגיבוי לא תקין')}};
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 let toastT;function toast(t){if(!t||t==='שולח…')return;const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>{e.style.display='none'},8000)}
 try{new MutationObserver(()=>toast($('#tmsg').textContent)).observe($('#tmsg'),{childList:true,characterData:true,subtree:true})}catch(e){}
 $('#toast').onclick=()=>{$('#toast').style.display='none'};
