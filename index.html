@@ -130,9 +130,9 @@ function setv(id,v){const e=$(id);if(e&&document.activeElement!==e)e.value=v}
 function render(){
   $('#go').textContent=on?'עצור ניטור':'הפעל ניטור';$('#go').className=on?'stop':'';
   $('#list').innerHTML=D.tickers.map(t=>{const q=last[t];
-    const dp=q?`<span class="${q.dp>=0?'up':'dn'}">${q.dp>=0?'+':''}${(q.dp||0).toFixed(2)}% היום</span>`:'<span class="m">ממתין לנתונים</span>';
+    const dp=q?`<span class="${q.dp>=0?'up':'dn'}">${q.dp>=0?'+':''}${(q.dp||0).toFixed(2)}% ${q.fresh?'היום':'בסשן האחרון'}</span>`:'<span class="m">ממתין לנתונים</span>';
     const mv=q&&q.mv!==null?` · <span class="${q.mv>=0?'up':'dn'}">${q.mv>=0?'+':''}${q.mv.toFixed(2)}% ב-${D.win} דק'</span>`:'';
-    return `<div class="card t"><div><b>${t}</b><div class="m">${dp}${mv}${q&&!q.fresh?' · שוק סגור':''}${volRatio[t]!==undefined?' · מחזור '+Math.round(volRatio[t])+'% מהממוצע':''}</div></div>
+    return `<div class="card t"><div><b>${t}</b><div class="m">${dp}${mv}${q&&!q.fresh?' · שוק סגור, מחיר סגירה':''}${volRatio[t]!==undefined?' · מחזור '+Math.round(volRatio[t])+'% מהממוצע':''}</div></div>
     <div style="display:flex;align-items:center;gap:6px"><span class="p">${q?'$'+q.c.toFixed(2):'–'}</span><button class="g" data-r="${t}" aria-label="הסר ${t}">✕</button></div></div>`}).join('')||'<p class="m">הוסף מניות למעקב.</p>';
   $('#log').innerHTML=D.log.map(a=>`<div class="card al"><b>${a.title}</b><div>${a.body}</div><div class="m">${new Date(a.ts).toLocaleString('he-IL')}</div></div>`).join('')||'<p class="m">עוד אין התראות.</p>';
   setv('#kid',D.kid);setv('#sec',D.sec);setv('#s1',D.surge);setv('#s2',D.win);setv('#s3',D.day);setv('#s4',D.nh);setv('#s5',D.maxp);setv('#s6',D.minscore);setv('#s7',D.vol);setv('#s8',D.rv);setv('#s9',D.cg);
@@ -165,13 +165,14 @@ async function poll(){
     const j=await r.json(),m=j.snapshots||j;
     D.tickers.forEach(t=>{
       const s=m[t];if(!s||!s.latestTrade)return;
-      const c=s.latestTrade.p,tt=new Date(s.latestTrade.t).getTime();
+      let c=s.latestTrade.p;const tt=new Date(s.latestTrade.t).getTime();
       let base=null;
       const today=dayKey(new Date(now));
       if(s.dailyBar&&s.prevDailyBar)base=dayKey(new Date(s.dailyBar.t))===today?s.prevDailyBar.c:s.dailyBar.c;
       else if(s.dailyBar)base=dayKey(new Date(s.dailyBar.t))===today?s.dailyBar.o:s.dailyBar.c;
       else if(s.prevDailyBar)base=s.prevDailyBar.c;
-      const dp=base?(c/base-1)*100:0;
+      let dp=base?(c/base-1)*100:0;
+      if(!open&&s.dailyBar&&s.prevDailyBar&&s.prevDailyBar.c>0){c=s.dailyBar.c;dp=(c/s.prevDailyBar.c-1)*100}
       const h=(hist[t]||[]).filter(p=>now-p[0]<=D.win*90000);h.push([now,c]);hist[t]=h;
       const w=h.filter(p=>now-p[0]<=D.win*60000),span=now-w[0][0];
       const mv=span>=3*60000?(c/w[0][1]-1)*100:null;
