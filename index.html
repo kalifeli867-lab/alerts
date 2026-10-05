@@ -148,16 +148,24 @@ details.rowc.a{border-inline-start:4px solid var(--up)}details.rowc.b{border-inl
 <label>התראת מחזור חריג: מעל (% מהמחזור היומי הממוצע)<input id="s7" type="number" step="10" min="10" inputmode="numeric"></label>
 <label>סריקת שוק: מחזור יחסי מינימלי (פי כמה מהצפוי)<input id="s8" type="number" step="0.5" min="1" inputmode="decimal"></label>
 <label>סריקת שוק: עלייה מינימלית מהסגירה (%)<input id="s9" type="number" step="0.5" min="0" inputmode="decimal"></label>
+<label>סיכון לעסקה בקנייה מהירה בדמה (% מהחשבון)<input id="s10" type="number" step="0.1" min="0.1" max="5" inputmode="decimal"></label>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button id="bkp" class="g" style="border:1px solid var(--line);color:var(--ink)">גיבוי הגדרות (העתק)</button><button id="rst" class="g" style="border:1px solid var(--line);color:var(--ink)">שחזור מגיבוי</button></div>
 <p class="m">הגיבוי כולל את המפתחות. שמור אותו במקום פרטי, למשל הערה נעולה בטלפון, ואם הנתונים יימחקו תוכל לשחזר בלחיצה.</p></details>
 
 </section>
 <p class="note">האפליקציה מנטרת רק כשהיא פתוחה, והמסך נשאר דלוק בזמן הניטור. הנתונים מ-Alpaca (בורסת IEX, כולל מסחר מוקדם) ועשויים להיות חלקיים במניות שנסחרות מעט. מדובר בהתראה על תנועה חריגה ולא בתחזית או ייעוץ השקעות.</p>
 </main>
+<div id="qb" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;align-items:flex-end;justify-content:center"><div class="card" style="width:100%;max-width:640px;border-radius:16px 16px 0 0;margin:0;padding:16px calc(env(safe-area-inset-right,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 16px)"><div class="t"><b id="qbt"></b><span class="m">קנייה בדמה (בלי כסף אמיתי)</span></div>
+<label>כמות<input id="qbq" type="number" min="1" step="1" inputmode="numeric"></label>
+<label>מחיר Limit ($)<input id="qbl" type="number" step="any" min="0" inputmode="decimal"></label>
+<label>סטופ לוס ($)<input id="qbs" type="number" step="any" min="0" inputmode="decimal"></label>
+<label>יעד רווח ($)<input id="qbp" type="number" step="any" min="0" inputmode="decimal"></label>
+<div class="m" id="qbr" style="margin-top:8px"></div><div class="m" id="qbn" style="margin-top:4px"></div>
+<div class="add" style="margin-top:12px"><button id="qbok">אשר קנייה בדמה</button><button id="qbc" class="g" style="border:1px solid var(--line);color:var(--ink)">ביטול</button></div></div></div>
 <nav id="bnav"><button data-go="scan"><b>🔍</b>סורק</button><button data-go="news"><b>📰</b>חדשות</button><button data-go="watch"><b>⭐</b>מניות</button><button data-go="trade"><b>💼</b>מסחר</button><button data-go="settings"><b>⚙️</b>הגדרות</button></nav>
 <script>
 const $=s=>document.querySelector(s);
-const D={kid:'',sec:'',tickers:['NVDA','TSLA','AAPL','AMD','PLTR'],surge:8,win:10,day:20,nh:16,maxp:20,minscore:30,vol:100,rv:3,cg:3,pmsrc:'sip',log:[]};
+const D={kid:'',sec:'',tickers:['NVDA','TSLA','AAPL','AMD','PLTR'],surge:8,win:10,day:20,nh:16,maxp:20,minscore:30,vol:100,rv:3,cg:3,pmsrc:'sip',risk:0.5,log:[]};
 try{Object.assign(D,JSON.parse(localStorage.getItem('sa2')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('sa2',JSON.stringify(D))}catch(e){}};
 const OK=t=>/^[A-Z.\-]{1,8}$/.test(t);
@@ -174,7 +182,7 @@ function render(){
     return `<div class="card t"><div><b>${t}</b><div class="m">${dp}${mv}${q&&!q.fresh?' · שוק סגור, מחיר סגירה':''}${volRatio[t]!==undefined?' · מחזור '+Math.round(volRatio[t])+'% מהממוצע':''}</div></div>
     <div style="display:flex;align-items:center;gap:6px"><span class="p">${q?'$'+q.c.toFixed(2):'–'}</span><button class="g" data-r="${t}" aria-label="הסר ${t}">✕</button></div></div>`}).join('')||'<p class="m">הוסף מניות למעקב.</p>';
   $('#log').innerHTML=D.log.map(a=>`<div class="card al"><b>${a.title}</b><div>${a.body}</div><div class="m">${new Date(a.ts).toLocaleString('he-IL')}</div></div>`).join('')||'<p class="m">עוד אין התראות.</p>';
-  setv('#kid',D.kid);setv('#sec',D.sec);setv('#s1',D.surge);setv('#s2',D.win);setv('#s3',D.day);setv('#s4',D.nh);setv('#s5',D.maxp);setv('#s6',D.minscore);setv('#s7',D.vol);setv('#s8',D.rv);setv('#s9',D.cg);setv('#pmsrc',D.pmsrc);
+  setv('#kid',D.kid);setv('#sec',D.sec);setv('#s1',D.surge);setv('#s2',D.win);setv('#s3',D.day);setv('#s4',D.nh);setv('#s5',D.maxp);setv('#s6',D.minscore);setv('#s7',D.vol);setv('#s8',D.rv);setv('#s9',D.cg);setv('#pmsrc',D.pmsrc);setv('#s10',D.risk);
 }
 function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(a.currentTime+.4)}catch(e){}}
 async function notify(title,body,tag){
@@ -237,7 +245,7 @@ $('#sk').onclick=()=>{D.kid=$('#kid').value.trim();D.sec=$('#sec').value.trim();
 $('#na').onclick=()=>{const t=$('#nt').value.trim().toUpperCase();if(!OK(t)||D.tickers.includes(t)||D.tickers.length>=50)return;D.tickers.push(t);$('#nt').value='';save();render();if(on)poll()};
 $('#nt').onkeydown=e=>{if(e.key==='Enter')$('#na').click()};
 $('#list').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;D.tickers=D.tickers.filter(x=>x!==b.dataset.r);save();render()};
-[['s1','surge'],['s2','win'],['s3','day'],['s4','nh'],['s5','maxp'],['s6','minscore'],['s7','vol'],['s8','rv'],['s9','cg']].forEach(([i,k])=>$('#'+i).onchange=()=>{const v=parseFloat($('#'+i).value);if(v>0){D[k]=v;save()}render()});
+[['s1','surge'],['s2','win'],['s3','day'],['s4','nh'],['s5','maxp'],['s6','minscore'],['s7','vol'],['s8','rv'],['s9','cg'],['s10','risk']].forEach(([i,k])=>$('#'+i).onchange=()=>{const v=parseFloat($('#'+i).value);if(v>0){D[k]=v;save()}render()});
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const NPOS=[[/to acquire|acquires?\b|acquisition of|merger agreement/,30],[/beats? (estimates|expectations)|earnings beat|raises (full-year |fiscal )?(guidance|outlook|forecast)/,25],[/fda (approv|clear)|approval from the fda|510\(k\)|breakthrough (therapy )?designation|fast track/,35],[/phase (2|3|ii|iii).{0,60}(met|positive|success|primary endpoint)|positive (topline|top-line|data|results)/,35],[/definitive (merger )?agreement|to be acquired|buyout|takeover|tender offer|go-private/,40],[/(awarded|wins?|secures?|receives?|signs?).{0,40}(contract|purchase order|order)/,25],[/partnership|partners? with|partnered|collaborat|strategic agreement|license agreement|letter of intent/,15],[/nvidia|microsoft|google|amazon|apple|openai|pentagon|department of defense|u\.s\. army|nasa/,10,1],[/uplist|nasdaq listing|short squeeze|record (revenue|sales)|raises (full-year )?guidance|patent (granted|issued)/,15],[/\bai\b|quantum|crypto|bitcoin|treasury strategy|robotics/,5,1]];
 const NNEG=/offering|dilut|warrant|private placement|reverse (stock )?split|going concern|delist|bankruptcy|sec investigation|class action|downgrade|misses|withdraw|trading halt|halt news|lawsuit|plunge|tumble|slump|short seller|short report|recall|subpoena|fraud|resigns|deficiency|non-compliance|probe|investigation/;
@@ -348,7 +356,7 @@ async function loadPaper(){
     loadJournal();
   }catch(e){$('#pacc').textContent='אין חיבור לחשבון (רשת או חסימת דפדפן)'}
 }
-async function placeOrder(side){
+async function placeOrder(side,skip){
   const msg=$('#tmsg');
   const sym=$('#tsym').value.trim().toUpperCase(),qty=Number($('#tqty').value),type=$('#ttype').value,lp=$('#tlim').value.trim(),ext=$('#text').checked;
   if(!/^[A-Z.\-]{1,8}$/.test(sym)||!(qty>0)||!Number.isInteger(qty)){msg.textContent='בדוק את הסימול ואת הכמות (מספר שלם)';return}
@@ -370,7 +378,7 @@ async function placeOrder(side){
   if(!px){try{const r=await fetch('https://data.alpaca.markets/v2/stocks/trades/latest?feed=iex&symbols='+encodeURIComponent(sym),{headers:HDR()});if(r.ok){const j=await r.json();px=((j.trades||{})[sym]||{}).p||0}}catch(e){}}
   const est=px*qty,eq=acct&&Number(acct.equity)||0;
   const txt=(side==='buy'?'קנייה':'מכירה')+' בחשבון דמה (בלי כסף אמיתי)\n'+qty+' × '+sym+'\n'+(body.type==='limit'?'Limit '+lp:'Market')+(ext?'\nמסחר מורחב':'')+(est?'\nשווי משוער: $'+est.toLocaleString('en-US',{maximumFractionDigits:0}):'')+(stop?'\nסטופ לוס: '+stop:'')+(tp?'\nיעד רווח: '+tp:'')+(est&&eq&&est>0.2*eq?'\n⚠️ יותר מ-20% מהחשבון':'');
-  if(!confirm(txt))return;
+  if(!skip&&!confirm(txt))return;
   msg.textContent='שולח…';
   try{
     const r=await pReq('/orders','POST',body);
@@ -593,20 +601,15 @@ async function marketScan(){
       let acc=0;hist.slice(-10).forEach(b=>{const r=b.h-b.l;if(r>0&&b.v>=1.5*avg&&(b.c-b.l)/r>=0.7)acc++});
       res.push({...c,avg,vol,rvol,acc,sd});
     }
-    res.sort((a,b)=>b.rvol-a.rvol);const fin=res.slice(0,25),nw={};
-    if(fin.length){
+    res.sort((a,b)=>b.rvol-a.rvol);const fin0=res.slice(0,40),nw={};
+    if(fin0.length){
       try{const since=new Date(now-(live?86400000:4*86400000)).toISOString().replace(/\.\d+Z$/,'Z');
-        const r=await fetch('https://data.alpaca.markets/v1beta1/news?limit=50&sort=desc&start='+since+'&symbols='+encodeURIComponent(fin.map(x=>x.s).join(',')),{headers:HDR()});
+        const r=await fetch('https://data.alpaca.markets/v1beta1/news?limit=50&sort=desc&start='+since+'&symbols='+encodeURIComponent(fin0.map(x=>x.s).join(',')),{headers:HDR()});
         if(r.ok){const j=await r.json();(j.news||[]).forEach(a=>{if((a.symbols||[]).length>3||ROUNDUP.test(a.headline||''))return;const sc=scoreArticle(a.headline||'',a.summary||'');(a.symbols||[]).forEach(q=>{if(!nw[q]||nw[q].sc<sc)nw[q]={sc,h:a.headline||'',a}})})}}catch(e){}
     }
-    logSignals(fin,nw,live,now);
-    const bt='border:1px solid var(--line);color:var(--ink)';
-    const card=x=>{const n=nw[x.s],hasN=n&&n.sc>=30;
-      const nl=n?(hasN?`<div style="margin-top:6px">📰 ${esc(n.h)} ${trLink(n.a)}</div>`:`<div class="m" style="margin-top:6px">📰 ${esc(n.h)} (ציון ${n.sc})</div>`):`<div class="m" style="margin-top:6px;color:#f5c451">⚠️ אין חדשה ספציפית ידועה לחברה: יכול להיות סימן מוקדם, אבל גם ניפוח</div>`;
-      const pills=(hasN?'<span class="pill g">📰</span>':'<span class="pill y">⚠️</span>')+`<span class="pill">🔥×${x.rvol.toFixed(1)}</span>`+(x.acc>=3?`<span class="pill g">צבירה ${x.acc}</span>`:'');
-      return `<details class="card rowc ${hasN?'a':x.chg>=D.cg?'b':'c'}"><summary><span class="rw-l"><b>${esc(x.s)}</b><span class="num">$${x.p.toFixed(2)}</span></span><span class="rw-r">${pills}<span class="num ${x.chg>=0?'up':'dn'}" style="font-weight:700">${x.chg>=0?'+':''}${x.chg.toFixed(1)}%</span></span></summary><div class="dt"><div class="m">${x.p<1?'מניית פני, סיכון גבוה<br>':''}מחזור פי ${x.rvol.toFixed(1)} מ${live?'הצפוי לשעה':'הממוצע היומי'} · ${Math.round(x.vol).toLocaleString('en-US')} מול ממוצע ${Math.round(x.avg).toLocaleString('en-US')} ליום (IEX)<br>ימי צבירה ב-10 ימים: ${x.acc}/10</div>${nl}<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="${bt}" data-addt="${esc(x.s)}">+ מעקב</button><button class="g" style="${bt}" data-buy="${esc(x.s)}">קנה בפייפר</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${encodeURIComponent(x.s)}&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div></details>`};
-    const hi=fin.filter(x=>x.chg>=D.cg),ea=fin.filter(x=>x.chg<D.cg);
-    box.innerHTML=(hi.length?'<div class="m" style="margin:8px 0"><b>💰 מחזור חריג ועלייה</b></div>'+hi.map(card).join(''):'')+(ea.length?'<div class="m" style="margin:12px 0 8px"><b>👀 מחזור עולה לפני תנועת מחיר</b></div>'+ea.map(card).join(''):'')||'<p class="m">לא נמצאו מניות עם מחזור חריג כרגע.</p>';
+    const fin=fin0.map(x=>{const n=nw[x.s],hasN=n&&n.sc>=25;return scoreRow({s:x.s,p:x.p,chg:x.chg,pmVol:x.vol,avg:x.avg,rvol:x.rvol,acc:x.acc,sd:x.sd,best:hasN?{sc:n.sc,h:n.h,a:n.a,ts:new Date(n.a.created_at).getTime()}:null,nNews:hasN?1:0,react:null,pmHigh:null,dist:null},now)}).sort((a,b)=>b.pot.score-a.pot.score).slice(0,25);
+    logSignals(fin.map(r=>({s:r.s,p:r.p,chg:r.chg,rvol:r.rvol,acc:r.acc,sd:r.sd,ps:r.pot.score})),Object.fromEntries(fin.filter(r=>r.best).map(r=>[r.s,{sc:r.best.sc}])),live,now);
+    box.innerHTML=fin.map(r=>rowCard(r,live?'מחזור היום':'מחזור הסשן')).join('')||'<p class="m">לא נמצאו מניות עם מחזור חריג כרגע.</p>';
     st.textContent=(live?'':'השוק סגור, מציג את הסשן האחרון · ')+`נסרקו ${Object.keys(snap).length} מניות · ${cands.length} מועמדות · ${fin.length} עם מחזור חריג · ${new Date().toLocaleTimeString('he-IL')}`;
   }catch(e){st.textContent='הסריקה נכשלה: '+(e&&e.message?e.message:'רשת או חסימת דפדפן')}
   finally{btn.disabled=false}
@@ -621,7 +624,7 @@ function sigSave(a){try{localStorage.setItem(SIGK,JSON.stringify(a.slice(-1000))
 function logSignals(fin,nw,live,now){
   const a=sigLoad(),have=new Set(a.map(x=>x.t+'|'+x.d+'|'+x.k));
   fin.forEach(x=>{const k=x.chg>=D.cg?'hi':'early',key=x.s+'|'+x.sd+'|'+k;if(have.has(key))return;
-    const n=nw[x.s];a.push({t:x.s,d:x.sd,k,ts:now.getTime(),px:x.p,chg:x.chg,rv:x.rvol,ac:x.acc,nw:n&&n.sc>=30?1:0,lv:live?1:0})});
+    const n=nw[x.s];a.push({t:x.s,d:x.sd,k,ts:now.getTime(),px:x.p,chg:x.chg,rv:x.rvol,ac:x.acc,nw:n&&n.sc>=25?1:0,lv:live?1:0,ps:x.ps||0})});
   sigSave(a);
 }
 const avgf=a=>a.length?a.reduce((p,x)=>p+x,0)/a.length:null;
@@ -651,11 +654,11 @@ async function evalSignals(){
       const ret=(c,b)=>(c/b-1)*100;
       const d1=ret(after[0].c,s.px),d5=after.length>=5?ret(after[4].c,s.px):null;
       const w=after.slice(0,5);
-      rows.push({k:s.k,nw:s.nw,ac:s.ac,d1,d5,
+      rows.push({k:s.k,nw:s.nw,ac:s.ac,ps:s.ps||0,d1,d5,
         s5:d5!==null&&base&&spy[j0+5]?ret(spy[j0+5].c,base):null,
         mae:ret(Math.min(...w.map(b=>b.l)),s.px)});
     }
-    const groups=[['כל האותות',rows],['💰 מחזור חריג ועלייה',rows.filter(r=>r.k==='hi')],['👀 מחזור לפני תנועת מחיר',rows.filter(r=>r.k==='early')],['📰 עם חדשה חיובית',rows.filter(r=>r.nw)],['בלי חדשה',rows.filter(r=>!r.nw)],['ימי צבירה 3 ומעלה',rows.filter(r=>r.ac>=3)]];
+    const groups=[['כל האותות',rows],['⚡ פוטנציאל גבוה (70 ומעלה)',rows.filter(r=>r.ps>=70)],['פוטנציאל בינוני (50 עד 69)',rows.filter(r=>r.ps>=50&&r.ps<70)],['פוטנציאל נמוך (מתחת ל-50)',rows.filter(r=>r.ps>0&&r.ps<50)],['💰 מחזור חריג ועלייה',rows.filter(r=>r.k==='hi')],['👀 מחזור לפני תנועת מחיר',rows.filter(r=>r.k==='early')],['📰 עם חדשה חיובית',rows.filter(r=>r.nw)],['בלי חדשה',rows.filter(r=>!r.nw)],['ימי צבירה 3 ומעלה',rows.filter(r=>r.ac>=3)]];
     const fp=n=>n===null?'–':(n>=0?'+':'')+n.toFixed(1)+'%',cc=n=>n===null?'':n>=0?'up':'dn';
     box.innerHTML=groups.filter(([,r])=>r.length).map(([name,r])=>{const g=groupStats(r);
       return `<div class="card"><div class="t"><b>${name}</b><span class="m">${g.n} אותות</span></div><div class="m" style="line-height:1.7">יום אחרי: ממוצע <span class="num ${cc(g.a1)}">${fp(g.a1)}</span> · ברווח ${g.w1===null?'–':Math.round(g.w1)+'%'} (${g.n1})<br>5 ימים: ממוצע <span class="num ${cc(g.a5)}">${fp(g.a5)}</span> · חציון <span class="num ${cc(g.m5)}">${fp(g.m5)}</span> · ברווח ${g.w5===null?'–':Math.round(g.w5)+'%'} (${g.n5})<br>השוק (SPY) באותה תקופה: <span class="num">${fp(g.s5)}</span><br>הגרוע ביותר ב-5 ימים: <span class="num ${cc(g.worst)}">${fp(g.worst)}</span> · ירידה ממוצעת בדרך: <span class="num ${cc(g.mae)}">${fp(g.mae)}</span>${g.n<20?'<br><span style="color:#f5c451">⚠️ מעט אותות: אל תסיק מסקנות.</span>':''}</div></div>`}).join('')||'<p class="m">עוד אין אותות שאפשר לבדוק. נדרש לפחות יום מסחר אחרי האות.</p>';
@@ -664,6 +667,82 @@ async function evalSignals(){
 }
 $('#scgo').onclick=evalSignals;
 $('#sccl').onclick=()=>{if(confirm('למחוק את כל האותות השמורים?')){sigSave([]);$('#scres').innerHTML='';$('#scst').textContent='ההיסטוריה נמחקה'}};
+function accOf(hist,avg){let n=0;hist.slice(-10).forEach(b=>{const r=b.h-b.l;if(r>0&&b.v>=1.5*avg&&(b.c-b.l)/r>=0.7)n++});return n}
+function potentialScore(o){
+  const parts=[];let s=0;const add=(n,t)=>{if(n){s+=n;parts.push((n>0?'+':'')+n+' '+t)}};
+  const c=o.chg,r=o.rvol;
+  if(o.newsSc!=null){let k=o.newsSc>=55?22:o.newsSc>=40?18:14;const h=o.newsAgeH;if(h!=null)k+=h<=3?6:h<=12?4:h<=24?2:0;if(o.nNews>1)k+=2;add(Math.min(k,30),'חדשה חיובית')}
+  if(r!=null){let v=r>=10?25:r>=6?21:r>=3?16:r>=2?10:r>=1.5?6:0;if(o.accelShare!=null&&o.accelShare>=0.4)v+=3;add(Math.min(v,25),'מחזור חריג ×'+r.toFixed(1))}
+  let m=0;if(c>=3)m=c<6?10:c<15?18:c<30?22:c<60?16:8;
+  if(m){if(o.dist!=null&&o.dist>=-3)m+=3;if(o.aboveVwap)m+=2;add(Math.min(m,25),'מומנטום '+(c>=0?'+':'')+c.toFixed(1)+'%')}
+  const early=o.newsSc!=null&&c<10&&r!=null&&r>=3;let st=0;
+  if(early)st+=10;else if(o.newsSc!=null&&c>=10)st+=4;if(o.acc>=3)st+=4;
+  add(Math.min(st,10),early?'מוקדם: חדשה ומחזור, עוד לא רצה':'צבירה או המשך');
+  if(o.avg<20000)add(-8,'נזילות נמוכה');
+  if(o.price<1)add(-6,'מניית פני');
+  if(c>80)add(-8,'כבר רצה מאוד');
+  if(o.newsSc==null&&c>40)add(-6,'ריצה בלי הסבר');
+  if(o.reactPct!=null&&o.reactPct<-2)add(-10,'ירדה אחרי החדשה');
+  if(o.dist!=null&&o.dist<-15)add(-6,'נסוגה מהשיא');
+  s=Math.max(0,Math.min(100,Math.round(s)));
+  return{score:s,tier:s>=70?'high':s>=50?'mid':'low',parts};
+}
+function scoreRow(r,now){
+  const b=r.best,ageH=b?Math.max(0,(now.getTime()-b.ts)/3600000):null;
+  r.pot=potentialScore({chg:r.chg,rvol:r.rvol,acc:r.acc||0,avg:r.avg||0,price:r.p,newsSc:b?b.sc:null,newsAgeH:ageH,nNews:r.nNews||0,reactPct:r.react?r.react.pct:null,dist:r.dist,aboveVwap:r.vwap?r.p>r.vwap:false,accelShare:r.accel});
+  return r;
+}
+function rowCard(r,vl){
+  const fp=n=>(n>=0?'+':'')+n.toFixed(1)+'%',cl=n=>n>=0?'up':'dn',bt='border:1px solid var(--line);color:var(--ink)',pot=r.pot,x=r.react,b=r.best;
+  const tc=pot.tier==='high'?'g':pot.tier==='mid'?'y':'',edge=pot.tier==='high'?'a':pot.tier==='mid'?'b':'c';
+  let nl='<div class="m" style="margin-top:6px;color:#f5c451">⚠️ אין חדשה חיובית ידועה: יכול להיות סימן מוקדם, אבל גם ניפוח</div>',rp='';
+  if(b){let txt='',tag='';
+    if(x){if(x.pre)txt='פורסמה לפני המסחר המוקדם, לפני '+x.mins+' דקות. השינוי מאז הסגירה: <b class="num '+cl(x.pct)+'">'+fp(x.pct)+'</b>';
+      else txt='פורסמה לפני '+x.mins+' דקות. מאז הפרסום: <b class="num '+cl(x.pct)+'">'+fp(x.pct)+'</b> (לפני הפרסום '+fp(x.before)+') · מחזור אחרי הפרסום '+Math.round(x.volAfter).toLocaleString('en-US');
+      tag=x.pct>=5?'✅ השוק הגיב לכתבה':x.pct>-1?'⚪ עוד לא הגיב':'🔻 ירד אחרי הפרסום';
+      rp='<span class="pill '+(x.pct>=5?'g':'')+'">'+(x.pre?'מהסגירה ':'מאז כתבה ')+fp(x.pct)+'</span>'}
+    nl='<div style="margin-top:6px">📰 '+esc(b.h)+' (ציון '+b.sc+') '+trLink(b.a)+(txt?'<br><span class="m">'+txt+'<br>'+tag+(r.nNews>1?' · '+r.nNews+' כתבות חיוביות':'')+'</span>':'')+'</div>';
+  }
+  const pills=(b?'<span class="pill g">📰</span>':'<span class="pill y">⚠️</span>')+(r.rvol?'<span class="pill">🔥×'+r.rvol.toFixed(1)+'</span>':'')+rp;
+  const dv=Math.round((r.pmVol||0)*r.p),stop=r.p*0.92,tp=r.p*1.15;
+  const nums='מחיר $'+r.p.toFixed(2)+(r.fresh?' (חי, IEX)':'')+(r.p<1?' · מניית פני, סיכון גבוה':'')+'<br>'+vl+': '+Math.round(r.pmVol||0).toLocaleString('en-US')+' מניות (בערך $'+dv.toLocaleString('en-US')+')'+(r.rvol?' · פי '+r.rvol.toFixed(1)+' מהצפוי':'')+'<br>ממוצע יומי '+Math.round(r.avg||0).toLocaleString('en-US')+' · ימי צבירה '+(r.acc||0)+'/10'+(r.pmHigh?' · שיא $'+r.pmHigh.toFixed(2)+' ('+fp(r.dist)+')':'')+(r.vwap?' · VWAP $'+r.vwap.toFixed(2):'');
+  return '<details class="card rowc '+edge+'"><summary><span class="rw-l"><b>'+esc(r.s)+'</b><span class="num" style="font-weight:700">$'+r.p.toFixed(2)+'</span>'+(r.fresh?'<span class="pill g">חי</span>':'')+'</span><span class="rw-r"><span class="pill '+tc+'" style="font-weight:700">⚡'+pot.score+'</span>'+pills+'<span class="num '+cl(r.chg)+'" style="font-weight:700">'+fp(r.chg)+'</span></span></summary><div class="dt"><div style="margin:2px 0 8px"><b>פוטנציאל '+pot.score+' מתוך 100</b><br><span class="m">'+(pot.parts.join(' · ')||'אין סימנים חזקים')+'</span></div><div class="m">'+nums+'</div>'+nl+'<div class="m" style="margin-top:8px">תוכנית דמה לדוגמה: כניסה $'+r.p.toFixed(2)+' · סטופ $'+stop.toFixed(2)+' (−8%) · יעד $'+tp.toFixed(2)+' (+15%)</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="'+bt+'" data-addt="'+esc(r.s)+'">+ מעקב</button><button data-qb="'+esc(r.s)+'" style="padding:8px 12px">💰 קנה בדמה</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+encodeURIComponent(r.s)+'&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div></details>';
+}
+let pmRows=[],pmFilter='all',qbState=null;
+function pmDraw(){
+  const box=$('#pmres');let rows=pmRows.slice().sort((a,b)=>b.pot.score-a.pot.score);
+  if(pmFilter==='high')rows=rows.filter(r=>r.pot.tier==='high');else if(pmFilter==='news')rows=rows.filter(r=>r.best);
+  const chip=(k,t)=>'<button class="g" data-pmf="'+k+'" style="border:1px solid var(--line);color:'+(pmFilter===k?'var(--acc)':'var(--ink)')+';padding:6px 12px">'+t+'</button>';
+  box.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+chip('all','הכל ('+pmRows.length+')')+chip('high','⚡ פוטנציאל גבוה')+chip('news','📰 עם חדשה')+'</div>'+(rows.slice(0,25).map(r=>rowCard(r,'מסחר מוקדם')).join('')||'<p class="m">אין מניות בסינון הזה.</p>');
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pmf]');if(b){pmFilter=b.dataset.pmf;pmDraw()}const q=e.target.closest('[data-qb]');if(q)openQuickBuy(q.dataset.qb)});
+function isRegular(now){const o=et(now),m=(+o.hour%24)*60+(+o.minute);return o.weekday!=='Sat'&&o.weekday!=='Sun'&&m>=570&&m<960}
+async function openQuickBuy(sym){
+  sym=String(sym).toUpperCase();if(!OK(sym))return;
+  let px=0;const row=(pmRows||[]).find(r=>r.s===sym);if(row)px=row.p;
+  if(!px){await ensurePrices([sym]);const q=priceMap[sym];px=(q&&q.p)||0}
+  if(!px){toast('אין מחיר לסימול הזה. בדוק אותו ידנית בטופס המסחר');switchTab('trade');$('#tsym').value=sym;return}
+  const now=(typeof window!=='undefined'&&window.__now)||new Date(),reg=isRegular(now),eq=(acct&&Number(acct.equity))||100000;
+  const lim=reg?px:px*1.01,stop=reg?px*0.92:0,tp=reg?px*1.15:0,riskD=eq*(D.risk||0.5)/100,dist=reg?(lim-stop):lim*0.08;
+  let qty=Math.max(1,Math.floor(riskD/dist));qty=Math.min(qty,Math.max(1,Math.floor(eq*0.1/lim)));
+  qbState={sym,reg};
+  $('#qbt').textContent=sym+' · $'+px.toFixed(2);
+  $('#qbq').value=qty;$('#qbl').value=lim.toFixed(2);$('#qbs').value=reg?stop.toFixed(2):'';$('#qbp').value=reg?tp.toFixed(2):'';
+  $('#qbs').disabled=!reg;$('#qbp').disabled=!reg;
+  $('#qbn').textContent=reg?'מסחר רגיל: הזמנה אחת עם סטופ ויעד אוטומטיים (חשבון דמה)':'מסחר מוקדם או מאוחר: הזמנת Limit מורחבת. סטופ ויעד לא נתמכים בשעות האלה, הוסף אותם אחרי הפתיחה.';
+  qbCalc();$('#qb').style.display='flex';
+}
+function qbCalc(){const q=Number($('#qbq').value),l=Number($('#qbl').value),s=Number($('#qbs').value),p=Number($('#qbp').value);
+  $('#qbr').textContent='שווי: $'+Math.round(q*l).toLocaleString('en-US')+(s>0?' · הפסד מקסימלי: $'+Math.round(q*(l-s)).toLocaleString('en-US'):'')+(p>0?' · רווח ביעד: $'+Math.round(q*(p-l)).toLocaleString('en-US'):'')}
+async function qbConfirm(){
+  const st=qbState;if(!st)return;
+  $('#tsym').value=st.sym;$('#tqty').value=$('#qbq').value;$('#ttype').value='limit';$('#tlim').value=$('#qbl').value;
+  $('#tstop').value=st.reg?$('#qbs').value:'';$('#ttp').value=st.reg?$('#qbp').value:'';$('#text').checked=!st.reg;
+  $('#qb').style.display='none';await placeOrder('buy',true);
+}
+$('#qbc').onclick=()=>{$('#qb').style.display='none'};
+$('#qbok').onclick=qbConfirm;
+['qbq','qbl','qbs','qbp'].forEach(i=>{$('#'+i).oninput=qbCalc});
 let pmState=null,pmTimer=null;
 const pmNow=()=>(typeof window!=='undefined'&&window.__now)||new Date();
 const iso0=d=>new Date(d).toISOString().replace(/\.\d+Z$/,'Z');
@@ -695,6 +774,15 @@ async function pmNews(now){
   }
   return {newsMap,hrs};
 }
+async function pmFetchFresh(cands,now){
+  const out={},o=et(now),mins=(+o.hour%24)*60+(+o.minute);
+  if(mins<480)return out;
+  for(let i=0;i<cands.length;i+=100){
+    try{const r=await fetch('https://data.alpaca.markets/v2/stocks/snapshots?feed=iex&symbols='+encodeURIComponent(cands.slice(i,i+100).join(',')),{headers:HDR()});
+      if(r.ok){const j=await r.json(),m=j.snapshots||j;Object.entries(m).forEach(([s,v])=>{if(v&&v.latestTrade&&now-new Date(v.latestTrade.t)<20*60000)out[s]={p:v.latestTrade.p,t:new Date(v.latestTrade.t).getTime()}})}}catch(e){}
+  }
+  return out;
+}
 function pmCompute(quotes,intra,now){
   const frac=sessFrac(now)||0.06,rows=[];
   for(const s of pmState.cands){
@@ -704,6 +792,10 @@ function pmCompute(quotes,intra,now){
     const arts=(pmState.news[s]||[]).filter(a=>a.sc>=D.minscore);
     let best=null;arts.forEach(a=>{if(!best||a.sc>best.sc||(a.sc===best.sc&&a.ts<best.ts))best=a});
     if(best){if(avg<10000)continue}else if(avg<20000||pmVol<3000)continue;
+    let vwap=null,accel=null;
+    if(pmVol>0){vwap=bars.reduce((a,b)=>a+b.v*(b.vw||(b.h+b.l+b.c)/3),0)/pmVol;
+      const lastT=new Date(bars[bars.length-1].t).getTime(),firstT=new Date(bars[0].t).getTime();
+      if(lastT-firstT>=3600000)accel=bars.filter(b=>new Date(b.t).getTime()>=lastT-25*60000).reduce((a,b)=>a+b.v,0)/pmVol}
     let react=null;
     if(best){
       const mins=Math.max(0,Math.round((now.getTime()-best.ts)/60000));
@@ -713,28 +805,18 @@ function pmCompute(quotes,intra,now){
         const base=i>0?bars[i-1].c:prevClose;
         react={pre:false,mins,pct:(p/base-1)*100,before:(base/prevClose-1)*100,volAfter:bars.slice(i).reduce((a,b)=>a+b.v,0)}}
     }
-    rows.push({s,p,chg,pmVol,pmHigh,dist:(p/pmHigh-1)*100,avg,rvol:avg>0?pmVol/(avg*frac):null,best,nNews:arts.length,react});
+    rows.push({s,p,chg,pmVol,pmHigh,dist:(p/pmHigh-1)*100,avg,rvol:avg>0?pmVol/(avg*frac):null,best,nNews:arts.length,react,acc:pmState.acc[s]||0,vwap,accel,fresh:!!qt.fresh});
   }
   return rows;
 }
 function pmRender(rows,now,note){
-  const box=$('#pmres'),bt='border:1px solid var(--line);color:var(--ink)';
-  const fp=n=>(n>=0?'+':'')+n.toFixed(1)+'%',cl=n=>n>=0?'up':'dn';
-  const card=(r,cls)=>{
-    let nl='<div class="m" style="margin-top:6px;color:#f5c451">⚠️ אין חדשה חיובית ידועה: יכול להיות סימן מוקדם, אבל גם ניפוח</div>',rp='';
-    if(r.best){const x=r.react;let tag,txt;
-      if(x.pre){txt='פורסמה לפני המסחר המוקדם, לפני '+x.mins+' דקות. השינוי מאז הסגירה: <b class="num '+cl(x.pct)+'">'+fp(x.pct)+'</b>'}
-      else{txt='פורסמה לפני '+x.mins+' דקות. מאז הפרסום: <b class="num '+cl(x.pct)+'">'+fp(x.pct)+'</b> (לפני הפרסום '+fp(x.before)+') · מחזור אחרי הפרסום '+Math.round(x.volAfter).toLocaleString('en-US')}
-      tag=x.pct>=5?'✅ השוק הגיב לכתבה':x.pct>-1?'⚪ עוד לא הגיב':'🔻 ירד אחרי הפרסום';
-      rp='<span class="pill '+(x.pct>=5?'g':'')+'">'+(x.pre?'מהסגירה ':'מאז כתבה ')+fp(x.pct)+'</span>';
-      nl='<div style="margin-top:6px">📰 '+esc(r.best.h)+' (ציון '+r.best.sc+') '+trLink(r.best.a)+'<br><span class="m">'+txt+'<br>'+tag+(r.nNews>1?' · '+r.nNews+' כתבות חיוביות':'')+'</span></div>';
-    }
-    const pills=(r.best?'<span class="pill g">📰</span>':'<span class="pill y">⚠️</span>')+(r.rvol?'<span class="pill">🔥×'+r.rvol.toFixed(1)+'</span>':'')+rp;
-    return '<details class="card rowc '+cls+'"><summary><span class="rw-l"><b>'+esc(r.s)+'</b><span class="num">$'+r.p.toFixed(2)+'</span></span><span class="rw-r">'+pills+'<span class="num '+cl(r.chg)+'" style="font-weight:700">'+fp(r.chg)+'</span></span></summary><div class="dt"><div class="m">'+(r.p<1?'מניית פני, סיכון גבוה<br>':'')+'מחזור במסחר המוקדם: '+Math.round(r.pmVol).toLocaleString('en-US')+' מניות'+(r.rvol?' · פי '+r.rvol.toFixed(1)+' מהצפוי':'')+'<br>שיא מוקדם $'+r.pmHigh.toFixed(2)+' ('+fp(r.dist)+' מהשיא)</div>'+nl+'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="'+bt+'" data-addt="'+esc(r.s)+'">+ מעקב</button><button class="g" style="'+bt+'" data-buy="'+esc(r.s)+'">קנה בפייפר</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+encodeURIComponent(r.s)+'&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div></details>'};
-  const A=rows.filter(r=>r.best&&r.chg>=D.cg).sort((a,b)=>b.chg-a.chg),B=rows.filter(r=>!r.best&&r.chg>=D.cg).sort((a,b)=>b.chg-a.chg),C=rows.filter(r=>r.best&&r.chg<D.cg).sort((a,b)=>b.best.sc-a.best.sc);
-  const sec=(t,l,c)=>l.length?'<div class="m" style="margin:12px 0 8px"><b>'+t+'</b> ('+l.length+')</div>'+l.map(x=>card(x,c)).join(''):'';
-  box.innerHTML=(sec('🟢 כתבה חיובית ועלייה במסחר המוקדם',A,'a')+sec('👀 עלייה בלי כתבה חיובית',B,'b')+sec('⚪ כתבה חיובית שעוד לא הזיזה את המחיר',C,'c'))||'<p class="m">לא נמצאו מניות שעומדות בקריטריונים כרגע.</p>';
-  $('#pmst').textContent=note+' · '+rows.length+' מניות · עודכן '+new Date().toLocaleTimeString('he-IL');
+  rows.forEach(r=>scoreRow(r,now));pmRows=rows;
+  const top=rows.slice().sort((a,b)=>b.pot.score-a.pot.score).slice(0,25),nwm={};
+  top.forEach(r=>{if(r.best)nwm[r.s]={sc:r.best.sc}});
+  logSignals(top.map(r=>({s:r.s,p:r.p,chg:r.chg,rvol:r.rvol,acc:r.acc,sd:dayKey(now),ps:r.pot.score})),nwm,true,now);
+  pmDraw();
+  const hi=rows.filter(r=>r.pot.tier==='high').length;
+  $('#pmst').textContent=note+' · '+rows.length+' מניות ('+hi+' בפוטנציאל גבוה) · עודכן '+new Date().toLocaleTimeString('he-IL');
 }
 function pmQuotesIex(snap,now){
   const q={};
@@ -743,13 +825,15 @@ function pmQuotesIex(snap,now){
 }
 function pmQuotesSip(intra){
   const q={};
-  for(const s of pmState.cands){const a=intra[s]||[],pr=pmState.prev[s];if(!pr)continue;const p=a.length?a[a.length-1].c:pmState.p0[s];if(!(p>0))continue;q[s]={p,chg:(p/pr-1)*100,prevClose:pr}}
+  for(const s of pmState.cands){const a=intra[s]||[],pr=pmState.prev[s];if(!pr)continue;
+    const fr=pmState.fresh&&pmState.fresh[s],p=fr?fr.p:(a.length?a[a.length-1].c:pmState.p0[s]);
+    if(!(p>0))continue;q[s]={p,chg:(p/pr-1)*100,prevClose:pr,fresh:!!fr}}
   return q;
 }
 async function pmRefresh(){
   if(!pmState)return;
   try{const now=pmNow();if(sessFrac(now)===null)return;
-    if(pmState.mode==='sip'){const intra=await sipBars(pmState.cands,'5Min',iso0(etStart(now)),iso0(now.getTime()-16*60000),2);pmRender(pmCompute(pmQuotesSip(intra),intra,now),now,pmState.note)}
+    if(pmState.mode==='sip'){const intra=await sipBars(pmState.cands,'5Min',iso0(etStart(now)),iso0(now.getTime()-16*60000),2);pmState.fresh=await pmFetchFresh(pmState.cands,now);pmRender(pmCompute(pmQuotesSip(intra),intra,now),now,pmState.note)}
     else{const FD=pmState.mode==='sipl'?'sip':'iex',snap={};for(let i=0;i<pmState.cands.length;i+=100){const r=await fetch('https://data.alpaca.markets/v2/stocks/snapshots?feed='+FD+'&symbols='+encodeURIComponent(pmState.cands.slice(i,i+100).join(',')),{headers:HDR()});if(r.ok){const j=await r.json();Object.assign(snap,j.snapshots||j)}}
       const intra=(await getBars(pmState.cands,'5Min',etStart(now).toISOString(),FD))||{};pmRender(pmCompute(pmQuotesIex(snap,now),intra,now),now,pmState.note)}
   }catch(e){}
@@ -782,11 +866,12 @@ async function pmScan(){
       const newsSyms=uni.filter(s=>p0[s]!==undefined&&hasNews(s)).slice(0,40);
       const cands=[...new Set([...movers,...newsSyms])];
       st.textContent='בודק מחזור ותגובה ל-'+cands.length+' מניות…';
-      const avg={},prevX={};
+      const avg={},prevX={},acc={};
       if(cands.length){const d35=await sipBars(cands,'1Day',new Date(now-35*864e5).toISOString().slice(0,10),end,3);
-        cands.forEach(s=>{const h=(d35[s]||[]).filter(b=>dayKey(new Date(b.t))!==today);if(h.length>=5){avg[s]=h.slice(-20).reduce((a,b)=>a+b.v,0)/h.slice(-20).length;prevX[s]=h[h.length-1].c}})}
-      pmState={mode,cands:cands.filter(s=>prevX[s]),news:newsMap,avg,prev:prevX,p0,note};
+        cands.forEach(s=>{const h=(d35[s]||[]).filter(b=>dayKey(new Date(b.t))!==today);if(h.length>=5){const l20=h.slice(-20);avg[s]=l20.reduce((a,b)=>a+b.v,0)/l20.length;prevX[s]=h[h.length-1].c;acc[s]=accOf(h,avg[s])}})}
+      pmState={mode,cands:cands.filter(s=>prevX[s]),news:newsMap,avg,prev:prevX,p0,acc,note,fresh:{}};
       const intra=pmState.cands.length?await sipBars(pmState.cands,'5Min',startPM,end,3):{};
+      pmState.fresh=await pmFetchFresh(pmState.cands,now);
       pmRender(pmCompute(pmQuotesSip(intra),intra,now),now,note);
     }else{
       const chunks=[];for(let i=0;i<syms.length;i+=200)chunks.push(syms.slice(i,i+200));
@@ -798,10 +883,10 @@ async function pmScan(){
       const newsSyms=Object.keys(newsMap).filter(s=>!isSpecial(s)&&hasNews(s)&&inRange(s)).slice(0,40);
       const cands=[...new Set([...movers,...newsSyms])];
       st.textContent='בודק מחזור ותגובה ל-'+cands.length+' מניות…';
-      const avg={};
+      const avg={},acc={};
       if(cands.length){const daily=(await getBars(cands,'1Day',new Date(now-40*864e5).toISOString().slice(0,10),FD))||{};
-        cands.forEach(s=>{const h=(daily[s]||[]).filter(b=>dayKey(new Date(b.t))!==today).slice(-20);if(h.length>=5)avg[s]=h.reduce((a,b)=>a+b.v,0)/h.length})}
-      pmState={mode,cands,news:newsMap,avg,prev:{},p0:{},note};
+        cands.forEach(s=>{const h=(daily[s]||[]).filter(b=>dayKey(new Date(b.t))!==today);if(h.length>=5){const l20=h.slice(-20);avg[s]=l20.reduce((a,b)=>a+b.v,0)/l20.length;acc[s]=accOf(h,avg[s])}})}
+      pmState={mode,cands,news:newsMap,avg,prev:{},p0:{},acc,note,fresh:{}};
       const intra=cands.length?(await getBars(cands,'5Min',etStart(now).toISOString(),FD))||{}:{};
       pmRender(pmCompute(pmQuotesIex(snap,now),intra,now),now,note);
     }
@@ -853,7 +938,7 @@ $('#esave').onclick=saveEdit;$('#eclose').onclick=()=>{$('#ebox').style.display=
 $('#tbuy').onclick=()=>placeOrder('buy');
 $('#tsell').onclick=()=>placeOrder('sell');
 $('#trf').onclick=loadPaper;
-document.addEventListener('click',e=>{const b=e.target.closest('[data-buy]');if(b){$('#tsym').value=b.dataset.buy;switchTab('trade');$('#trade').scrollIntoView()}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-buy]');if(b)openQuickBuy(b.dataset.buy)});
 setTimeout(loadPaper,900);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(!D.kid||!D.sec)$('#setup').open=true;
