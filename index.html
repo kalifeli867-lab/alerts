@@ -230,8 +230,7 @@ async function scanNews(){
     }
     const c=[],allList=[];
     arts.forEach(a=>{const sy=a.symbols||[];if(!sy.length||sy.length>3)return;
-      const t=((a.headline||'')+' '+(a.summary||'')).toLowerCase();let s=0;
-      let cx=0;NPOS.forEach(([p,w,ctx])=>{if(p.test(t)){if(ctx)cx+=w;else s+=w}});if(s>0)s+=cx;s=Math.min(s,90);if(NNEG.test(t))s=0;
+      const s=scoreArticle(a.headline||'',a.summary||'');
       allList.push({a,s:Math.max(0,s),sy});if(s>=D.minscore)c.push({a,s,sy})});
     const syms=[...new Set(c.flatMap(x=>x.sy))],snap={};
     for(let i=0;i<syms.length;i+=50){
@@ -443,7 +442,14 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-addt]');if
 $('#hot').onclick=hotScan;
 setTimeout(volScan,1500);setInterval(volScan,60000);
 function sessFrac(now){const o=et(now);if(o.weekday==='Sat'||o.weekday==='Sun')return null;const m=(+o.hour%24)*60+(+o.minute);if(m<240||m>=1200)return null;if(m<570)return 0.06;if(m>=960)return 1;return 0.06+0.94*Math.pow((m-570)/390,0.7)}
-function scoreText(t){t=t.toLowerCase();let s=0,cx=0;NPOS.forEach(([p,w,ctx])=>{if(p.test(t)){if(ctx)cx+=w;else s+=w}});if(s>0)s+=cx;s=Math.min(s,90);if(NNEG.test(t))s=0;return s}
+const NOISE=/\bnfl\b|\bnba\b|\bmlb\b|\bnhl\b|legend|celebrit|didn'?t want|years later|if you invested|would have|how much (would|money)|what to expect|should you|could you|best stocks|top stocks|stocks to (buy|watch)|price target|analyst (rating|says|upgrade)|net worth|billionaire|charity|donat|symphony|foundation|scholarship|giveaway|horoscope|opinion:|earnings preview|dividend|technical analysis/i;
+function scoreArticle(h,sm){
+  const hl=h.toLowerCase(),all=(h+' '+sm).toLowerCase();
+  if(NOISE.test(hl)||NNEG.test(all))return 0;
+  let s=0,cx=0;NPOS.forEach(([p,w,ctx])=>{if(p.test(hl)){if(ctx)cx+=w;else s+=w}});
+  if(s>0)s+=cx;return Math.min(s,90);
+}
+function scoreText(t){return scoreArticle(t,'')}
 async function pool(items,n,fn){let i=0;await Promise.all(Array.from({length:n},async()=>{while(i<items.length){const k=i++;try{await fn(items[k])}catch(e){}}}))}
 async function loadSymbols(){
   const today=dayKey(new Date());
@@ -514,7 +520,7 @@ async function marketScan(){
     if(fin.length){
       try{const since=new Date(now-(live?86400000:4*86400000)).toISOString().replace(/\.\d+Z$/,'Z');
         const r=await fetch('https://data.alpaca.markets/v1beta1/news?limit=50&sort=desc&start='+since+'&symbols='+encodeURIComponent(fin.map(x=>x.s).join(',')),{headers:HDR()});
-        if(r.ok){const j=await r.json();(j.news||[]).forEach(a=>{if((a.symbols||[]).length>3||ROUNDUP.test(a.headline||''))return;const sc=scoreText((a.headline||'')+' '+(a.summary||''));(a.symbols||[]).forEach(q=>{if(!nw[q]||nw[q].sc<sc)nw[q]={sc,h:a.headline||'',a}})})}}catch(e){}
+        if(r.ok){const j=await r.json();(j.news||[]).forEach(a=>{if((a.symbols||[]).length>3||ROUNDUP.test(a.headline||''))return;const sc=scoreArticle(a.headline||'',a.summary||'');(a.symbols||[]).forEach(q=>{if(!nw[q]||nw[q].sc<sc)nw[q]={sc,h:a.headline||'',a}})})}}catch(e){}
     }
     logSignals(fin,nw,live,now);
     const bt='border:1px solid var(--line);color:var(--ink)';
