@@ -82,6 +82,9 @@ details.opt>summary{min-height:34px;display:flex;align-items:center}
 .bub.a{align-self:flex-end;background:var(--card);border:1px solid var(--line);border-end-end-radius:4px}
 .chatbar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);z-index:15;background:var(--bg);padding:8px 0;display:flex;gap:8px;align-items:flex-end}
 .chatbar button{min-height:46px}
+#aithumbs{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0}#aithumbs>div{position:relative}#aithumbs img{height:68px;border-radius:10px;border:1px solid var(--line);display:block}
+#aithumbs b{position:absolute;top:-8px;inset-inline-end:-8px;background:var(--down);color:#04111f;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.85rem;cursor:pointer}
+.bub img{max-height:160px;max-width:100%;border-radius:10px;display:block;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -158,7 +161,9 @@ details.opt>summary{min-height:34px;display:flex;align-items:center}
 <button id="aisave" style="margin-top:10px;width:100%">שמור והתחל</button></div>
 <div id="chat"></div>
 <div id="aichips"><button class="g" data-aq="איזו מניה בסריקה הכי מבטיחה, ולמה?">איזו מניה הכי מבטיחה?</button><button class="g" data-aq="מה הסיכון הגדול בעסקה במניה הכי חזקה בסריקה?">מה הסיכון?</button><button class="g" data-aq="תסביר לי בפשטות איך לקרוא את הציון 1 עד 10 ומה הוא לא אומר.">איך לקרוא את הציון?</button><button class="g" data-aq="מה כדאי לבדוק לפני שאני קונה מניה בדמה?">מה לבדוק לפני קנייה?</button><button class="g" data-aq="תסתכל על הפוזיציות והמעקב שלי ותגיד לי מה הסיכון.">איך הפוזיציות שלי?</button></div>
-<div class="chatbar"><textarea id="aiq" rows="1" placeholder="שאל על מניה, סיכון או הציונים"></textarea><button id="aisend">שלח</button></div>
+<div id="aithumbs"></div>
+<div class="chatbar"><button id="aiattach" class="g" aria-label="צרף צילום מסך">📎</button><textarea id="aiq" rows="1" placeholder="שאל, או צרף צילום מסך"></textarea><button id="aisend">שלח</button></div>
+<input id="aifile" type="file" accept="image/*" multiple style="display:none">
 <div class="t" style="margin-top:6px"><label class="chk" style="margin:0"><input id="aictx" type="checkbox" checked>שלח ליועץ את נתוני הסריקה</label><button id="aiclr" class="g">נקה שיחה</button></div>
 <p class="m" style="margin-top:8px">היועץ לא מבטיח רווח ולא נותן הוראות קנייה. הוא מסביר נתונים ושיקולים. אין לו גישה לחדשות שלא מופיעות באפליקציה.</p>
 </section>
@@ -1019,12 +1024,12 @@ switchTab((()=>{try{return localStorage.getItem('sa_tab')}catch(e){return null}}
 (()=>{try{const sv=localStorage.getItem('sa_sv'),tv=localStorage.getItem('sa_tv');if(sv==='news')seg('data-sv','data-sp','news','sa_sv');if(tv==='jrn'||tv==='sc')seg('data-tv','data-tp',tv,'sa_tv')}catch(e){}})();
 let aiHist=[];
 try{aiHist=JSON.parse(localStorage.getItem('sa_chat')||'[]').slice(-24)}catch(e){}
-const AI_SYS='אתה יועץ בתוך אפליקציה לסריקת מניות אמריקאיות לקפיצות חדות במסחר יומי. המשתמש ישראלי ומתאמן בחשבון דמה (Paper). ענה בעברית פשוטה וקצרה (עד 8 שורות, מתאים למסך טלפון), בלי מונחים מקצועיים בלי להסביר אותם. הסתמך על הנתונים שהאפליקציה מספקת למטה ואל תמציא מחירים, חדשות או מספרים שלא מופיעים בהם. אם חסר מידע, אמור זאת. היה כן: אין ביטחון בקפיצה, ורוב המניות עם ציון גבוה לא יקפצו. הדגש ניהול סיכון: סטופ, פוזיציה קטנה, מניות פני מסוכנות, דילול והנפקות. אל תבטיח רווח ואל תיתן הוראות קנייה או מכירה ודאיות, אלא שיקולים, תרחישים ומה לבדוק (קריאת הכתבה, דיווחי SEC כמו 8-K ו-S-3, מחזור, מחיר מול שיא הבוקר). כשמדברים על מניה, התייחס לציון (1 עד 10), לחדשה, למחזור ולמחיר.';
+const AI_SYS='אתה יועץ בתוך אפליקציה לסריקת מניות אמריקאיות לקפיצות חדות במסחר יומי. המשתמש ישראלי ומתאמן בחשבון דמה (Paper). ענה בעברית פשוטה וקצרה (עד 8 שורות, מתאים למסך טלפון), בלי מונחים מקצועיים בלי להסביר אותם. הסתמך על הנתונים שהאפליקציה מספקת למטה ואל תמציא מחירים, חדשות או מספרים שלא מופיעים בהם. אם חסר מידע, אמור זאת. היה כן: אין ביטחון בקפיצה, ורוב המניות עם ציון גבוה לא יקפצו. הדגש ניהול סיכון: סטופ, פוזיציה קטנה, מניות פני מסוכנות, דילול והנפקות. אם מצורף צילום מסך (גרף, מסך מסחר, חדשה), נתח אותו, אל תנחש מספרים שלא נראים בבירור וציין מה לא ברור בו. אל תבטיח רווח ואל תיתן הוראות קנייה או מכירה ודאיות, אלא שיקולים, תרחישים ומה לבדוק (קריאת הכתבה, דיווחי SEC כמו 8-K ו-S-3, מחזור, מחיר מול שיא הבוקר). כשמדברים על מניה, התייחס לציון (1 עד 10), לחדשה, למחזור ולמחיר.';
 function aiFmt(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^[-*] (.+)$/gm,'• $1').replace(/\n/g,'<br>')}
-function aiSave(){try{localStorage.setItem('sa_chat',JSON.stringify(aiHist.slice(-24)))}catch(e){}}
+function aiSave(){try{localStorage.setItem('sa_chat',JSON.stringify(aiHist.slice(-24).map(m=>m.imgs?{r:m.r,t:m.t,hadImg:1}:m)))}catch(e){}}
 function aiRender(typing){
   const box=$('#chat');
-  box.innerHTML=(aiHist.length?aiHist.map(m=>'<div class="bub '+(m.r==='u'?'u':'a')+'">'+(m.r==='u'?esc(m.t):aiFmt(m.t))+'</div>').join(''):'<div class="card"><b>👋 היועץ שלך</b><div class="m" style="margin-top:6px">אפשר לשאול על מניה מהסריקה, על הסיכון בעסקה, או איך לקרוא את הציונים. אני רואה את תוצאות הסריקה האחרונה, המעקב והפוזיציות שלך. אני לא מבטיח רווח.</div></div>')+(typing?'<div class="bub a">חושב…</div>':'');
+  box.innerHTML=(aiHist.length?aiHist.map(m=>'<div class="bub '+(m.r==='u'?'u':'a')+'">'+(m.imgs?m.imgs.map(u=>'<img src="'+u+'" alt="צילום מסך">').join(''):m.hadImg?'<div style="font-size:.8rem;opacity:.8">📷 צילום מסך</div>':'')+(m.r==='u'?esc(m.t):aiFmt(m.t))+'</div>').join(''):'<div class="card"><b>👋 היועץ שלך</b><div class="m" style="margin-top:6px">אפשר לשאול על מניה מהסריקה, על הסיכון בעסקה, או איך לקרוא את הציונים. אני רואה את תוצאות הסריקה האחרונה, המעקב והפוזיציות שלך. אני לא מבטיח רווח.</div></div>')+(typing?'<div class="bub a">חושב…</div>':'');
   $('#aichips').style.display=aiHist.length?'none':'flex';
   $('#aionb').style.display=D.akey?'none':'block';
   if(!aiHist.length||typeof window==='undefined'||!window.scrollTo)return;
@@ -1042,17 +1047,29 @@ function aiContext(focus){
   if(acct&&acct.equity)L.push('שווי חשבון הדמה: $'+Math.round(Number(acct.equity)).toLocaleString('en-US'));
   return L.join('\n');
 }
+let aiImgs=[];
+function aiThumbs(){$('#aithumbs').innerHTML=aiImgs.map((u,i)=>'<div><img src="'+u+'" alt=""><b data-rmimg="'+i+'">✕</b></div>').join('')}
+function aiAddImg(url){if(aiImgs.length>=3){toast('עד 3 תמונות להודעה');return}aiImgs.push(url);aiThumbs()}
+function aiShrink(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=()=>rej(new Error('לא ניתן לקרוא את הקובץ'));
+  fr.onload=()=>{const im=new Image();im.onerror=()=>rej(new Error('פורמט התמונה לא נתמך. נסה צילום מסך רגיל'));
+    im.onload=()=>{const k=Math.min(1,1568/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.85))};im.src=fr.result};fr.readAsDataURL(file)})}
 async function aiSend(text,focus){
-  text=(text||'').trim();if(!text||aiBusy)return;
+  text=(text||'').trim();const imgs=aiImgs.slice();
+  if((!text&&!imgs.length)||aiBusy)return;
   if(!D.akey){aiRender();toast('הדבק קודם מפתח Anthropic');return}
-  aiBusy=true;aiHist.push({r:'u',t:text});$('#aiq').value='';aiRender(true);
+  if(!text)text='תסתכל על הצילום ותגיד לי מה אתה רואה ומה דעתך, בהקשר של מסחר יומי.';
+  aiBusy=true;const cur={r:'u',t:text};if(imgs.length)cur.imgs=imgs;aiHist.push(cur);aiImgs=[];aiThumbs();$('#aiq').value='';aiRender(true);
   try{
     const sys=AI_SYS+($('#aictx').checked?'\n\n'+aiContext(focus):'');
-    const msgs=[];aiHist.slice(-12).filter(m=>!m.err).forEach(m=>{const role=m.r==='u'?'user':'assistant';if(msgs.length&&msgs[msgs.length-1].role===role)msgs[msgs.length-1].content+='\n'+m.t;else msgs.push({role,content:m.t})});
+    const msgs=[];aiHist.slice(-12).filter(m=>!m.err).forEach(m=>{const role=m.r==='u'?'user':'assistant',blocks=[];
+      if(m===cur&&m.imgs)m.imgs.forEach(u=>blocks.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:u.split(',')[1]}}));
+      blocks.push({type:'text',text:(m!==cur&&(m.imgs||m.hadImg)?'[צורף צילום מסך בהודעה הזו] ':'')+m.t});
+      if(msgs.length&&msgs[msgs.length-1].role===role)msgs[msgs.length-1].content.push(...blocks);else msgs.push({role,content:blocks})});
     while(msgs.length&&msgs[0].role!=='user')msgs.shift();
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':D.akey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:D.amodel||'claude-sonnet-5-5',max_tokens:1100,system:sys,messages:msgs})});
     if(!r.ok){let e='';try{e=(await r.json()).error.message}catch(_){}
-      throw new Error(r.status===401?'המפתח לא תקין. בדוק אותו בהגדרות.':r.status===429?'יותר מדי בקשות. נסה שוב בעוד רגע.':/credit|billing/i.test(e)?'אין יתרה בחשבון Anthropic. הוסף יתרה בהגדרות החיוב.':'שגיאה '+r.status+(e?': '+e.slice(0,120):''))}
+      throw new Error(r.status===401?'המפתח לא תקין. בדוק אותו בהגדרות.':r.status===429?'יותר מדי בקשות. נסה שוב בעוד רגע.':r.status===413?'התמונה גדולה מדי. נסה צילום מסך קטן יותר.':/credit|billing/i.test(e)?'אין יתרה בחשבון Anthropic. הוסף יתרה בהגדרות החיוב.':'שגיאה '+r.status+(e?': '+e.slice(0,120):''))}
     const j=await r.json(),out=(j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n').trim()||'לא התקבלה תשובה.';
     aiHist.push({r:'a',t:out});
   }catch(e){aiHist.push({r:'a',t:'⚠️ '+(e&&e.message?e.message:'אין חיבור לרשת'),err:1})}
@@ -1060,6 +1077,11 @@ async function aiSend(text,focus){
 }
 function aiAsk(sym){switchTab('ai');return aiSend('ספר לי על '+sym+': האם לפי הנתונים זו הזדמנות טובה? מה הסיכונים ומה כדאי לבדוק לפני קנייה בדמה?',sym)}
 $('#aisend').onclick=()=>aiSend($('#aiq').value);
+$('#aiattach').onclick=()=>$('#aifile').click();
+$('#aifile').onchange=async e=>{const fs=[...(e.target.files||[])];e.target.value='';
+  for(const f of fs){if(aiImgs.length>=3){toast('עד 3 תמונות להודעה');break}if(!/^image\//.test(f.type)){toast('בחר קובץ תמונה');continue}
+    try{aiAddImg(await aiShrink(f))}catch(err){toast(err.message)}}};
+document.addEventListener('click',e=>{const x=e.target.closest('[data-rmimg]');if(x){aiImgs.splice(+x.dataset.rmimg,1);aiThumbs()}});
 $('#aiq').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend($('#aiq').value)}};
 $('#aiclr').onclick=()=>{aiHist=[];aiSave();aiRender()};
 $('#aisave').onclick=()=>{const k=$('#akey').value.trim();if(!k){toast('הדבק מפתח');return}D.akey=k;save();$('#akey').value='';render();aiRender();toast('היועץ מחובר')};
