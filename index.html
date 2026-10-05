@@ -59,8 +59,8 @@ a{color:var(--acc)}.note{color:var(--mute);font-size:.78rem;margin-top:28px}
 
 <h2 id="sec-news">חדשות לפני הפתיחה</h2>
 <div class="top"><span class="st" id="nst">לא נסרק עדיין</span><button id="ns">סרוק עכשיו</button></div>
-<p class="m">הציון (0-100) הוא הערכה לפי סוג החדשה ומחיר המניה, ולא סיכוי מדויק לקפיצה.</p>
-<div class="top" style="margin-top:8px"><span class="m" id="ndiag"></span><button id="nall" class="g" style="border:1px solid var(--line);color:var(--ink)">הצג את כל הכתבות</button></div>
+<p class="m">הציון (0-100) הוא הערכה לפי סוג החדשה ומחיר המניה, ולא סיכוי מדויק לקפיצה. הסימן – אומר שלא זוהה קטליזטור בכותרת, לא שהחדשה לא חשובה.</p>
+<div class="top" style="margin-top:8px"><span class="m" id="ndiag"></span><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="nnight" style="padding:8px 12px">חדשות הלילה</button><button id="nall" class="g" style="border:1px solid var(--line);color:var(--ink)">הצג את כל הכתבות</button></div></div>
 <div id="news"></div>
 
 <h2 id="sec-mkt">סריקת שוק: מחזור חריג וצבירה</h2>
@@ -205,22 +205,33 @@ $('#nt').onkeydown=e=>{if(e.key==='Enter')$('#na').click()};
 $('#list').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;D.tickers=D.tickers.filter(x=>x!==b.dataset.r);save();render()};
 [['s1','surge'],['s2','win'],['s3','day'],['s4','nh'],['s5','maxp'],['s6','minscore'],['s7','vol'],['s8','rv'],['s9','cg']].forEach(([i,k])=>$('#'+i).onchange=()=>{const v=parseFloat($('#'+i).value);if(v>0){D[k]=v;save()}render()});
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const NPOS=[[/fda (approv|clear)|approval from the fda|510\(k\)|breakthrough (therapy )?designation|fast track/,35],[/phase (2|3|ii|iii).{0,60}(met|positive|success|primary endpoint)|positive (topline|top-line|data|results)/,35],[/definitive (merger )?agreement|to be acquired|buyout|takeover|tender offer|go-private/,40],[/(awarded|wins?|secures?|receives?|signs?).{0,40}(contract|purchase order|order)/,25],[/partnership|partners? with|partnered|collaborat|strategic agreement|license agreement|letter of intent/,15],[/nvidia|microsoft|google|amazon|apple|openai|pentagon|department of defense|u\.s\. army|nasa/,10,1],[/uplist|nasdaq listing|short squeeze|record (revenue|sales)|raises (full-year )?guidance|patent (granted|issued)/,15],[/\bai\b|quantum|crypto|bitcoin|treasury strategy|robotics/,5,1]];
+const NPOS=[[/to acquire|acquires?\b|acquisition of|merger agreement/,30],[/beats? (estimates|expectations)|earnings beat|raises (full-year |fiscal )?(guidance|outlook|forecast)/,25],[/fda (approv|clear)|approval from the fda|510\(k\)|breakthrough (therapy )?designation|fast track/,35],[/phase (2|3|ii|iii).{0,60}(met|positive|success|primary endpoint)|positive (topline|top-line|data|results)/,35],[/definitive (merger )?agreement|to be acquired|buyout|takeover|tender offer|go-private/,40],[/(awarded|wins?|secures?|receives?|signs?).{0,40}(contract|purchase order|order)/,25],[/partnership|partners? with|partnered|collaborat|strategic agreement|license agreement|letter of intent/,15],[/nvidia|microsoft|google|amazon|apple|openai|pentagon|department of defense|u\.s\. army|nasa/,10,1],[/uplist|nasdaq listing|short squeeze|record (revenue|sales)|raises (full-year )?guidance|patent (granted|issued)/,15],[/\bai\b|quantum|crypto|bitcoin|treasury strategy|robotics/,5,1]];
 const NNEG=/offering|dilut|warrant|private placement|reverse (stock )?split|going concern|delist|bankruptcy|sec investigation|class action|downgrade|misses|withdraw|trading halt|halt news|lawsuit|plunge|tumble|slump|short seller|short report|recall|subpoena|fraud|resigns|deficiency|non-compliance|probe|investigation/;
 function pc(s,now){try{const c=s.latestTrade.p,today=dayKey(new Date(now)),db=s.dailyBar,pb=s.prevDailyBar;let base=null;
   if(db&&pb)base=dayKey(new Date(db.t))===today?pb.c:db.c;else if(db)base=dayKey(new Date(db.t))===today?db.o:db.c;else if(pb)base=pb.c;
   return [c,base?(c/base-1)*100:null]}catch(e){return [null,null]}}
 function trLink(a){const t=((a.headline||'')+'\n\n'+(a.summary||'')).slice(0,1500);return `<a href="https://translate.google.com/?sl=en&tl=iw&op=translate&text=${encodeURIComponent(t)}" target="_blank" rel="noopener">תרגם לעברית</a>`}
-let normalHtml='',lastAll=[],allMode=false,skipped={};
-function allHtml(){return lastAll.slice().sort((x,y)=>y.s-x.s||new Date(y.a.created_at)-new Date(x.a.created_at)).slice(0,40).map(x=>{const sk=x.sy.map(t=>skipped[x.a.id+'|'+t]).find(v=>v!==undefined);return `<div class="card"><div class="t"><b>${esc(x.sy.join(', '))}</b><span class="sc ${x.s>=60?'sh':x.s>=40?'sm':'sl'}">${x.s}</span></div><div>${esc(x.a.headline||'')}</div><div class="m">${new Date(x.a.created_at).toLocaleString('he-IL')}</div>${sk!==undefined?`<div class="m" style="color:#f5c451">הציון עובר, אבל המחיר $${sk.toFixed(2)} מעל המגבלה ($${D.maxp})</div>`:''}<div>${trLink(x.a)}</div></div>`}).join('')||'<p class="m">לא נמצאו כתבות.</p>'}
+function hoursSinceClose(n){
+  const now=n||new Date();
+  for(let k=0;k<6;k++){
+    const d=new Date(now.getTime()-k*864e5),o=et(d);
+    if(o.weekday==='Sat'||o.weekday==='Sun')continue;
+    let t=Date.UTC(+o.year,+o.month-1,+o.day,20,0);
+    for(let j=0;j<3;j++){const h=+et(new Date(t)).hour%24;if(h===16)break;t+=(16-h)*3600000}
+    if(t<=now.getTime())return Math.ceil((now.getTime()-t)/3600000)+1;
+  }
+  return 24;
+}
+let normalHtml='',lastAll=[],allMode=false,allTime=false,skipped={};
+function allHtml(){return lastAll.slice().sort((x,y)=>allTime?new Date(y.a.created_at)-new Date(x.a.created_at):y.s-x.s||new Date(y.a.created_at)-new Date(x.a.created_at)).slice(0,allTime?100:40).map(x=>{const sk=x.sy.map(t=>skipped[x.a.id+'|'+t]).find(v=>v!==undefined);return `<div class="card"><div class="t"><b>${esc(x.sy.join(', '))}</b><span class="sc ${x.s>=60?'sh':x.s>=40?'sm':'sl'}">${x.s>0?x.s:'–'}</span></div><div>${esc(x.a.headline||'')}</div><div class="m">${new Date(x.a.created_at).toLocaleString('he-IL')}</div>${sk!==undefined?`<div class="m" style="color:#f5c451">הציון עובר, אבל המחיר $${sk.toFixed(2)} מעל המגבלה ($${D.maxp})</div>`:''}<div>${trLink(x.a)}</div></div>`}).join('')||'<p class="m">לא נמצאו כתבות.</p>'}
 function drawNews(){$('#news').innerHTML=allMode?allHtml():normalHtml}
 let nFirst=true;const nSeen=new Set();
-async function scanNews(){
+async function scanNews(hrs){const HH=(typeof hrs==='number')?hrs:D.nh;
   if(!D.kid||!D.sec){$('#nst').textContent='הוסף מפתחות Alpaca כדי לסרוק חדשות';return}
   $('#nst').textContent='סורק…';
   const H={'APCA-API-KEY-ID':D.kid,'APCA-API-SECRET-KEY':D.sec},now=Date.now();
   try{
-    const since=new Date(now-D.nh*3600000).toISOString().replace(/\.\d+Z$/,'Z');
+    const since=new Date(now-HH*3600000).toISOString().replace(/\.\d+Z$/,'Z');
     let tok=null,arts=[];
     for(let i=0;i<6;i++){
       const r=await fetch('https://data.alpaca.markets/v1beta1/news?limit=50&sort=desc&start='+since+(tok?'&page_token='+encodeURIComponent(tok):''),{headers:H});
@@ -250,7 +261,8 @@ async function scanNews(){
     $('#nst').textContent='נסרק '+new Date().toLocaleTimeString('he-IL')+' · '+arts.length+' כתבות';
   }catch(e){$('#nst').textContent='אין חיבור לחדשות (רשת או חסימת דפדפן)'}
 }
-$('#ns').onclick=scanNews;$('#nall').onclick=()=>{allMode=!allMode;$('#nall').textContent=allMode?'חזור לחדשות החזקות':'הצג את כל הכתבות';drawNews()};
+$('#ns').onclick=scanNews;$('#nnight').onclick=()=>{allMode=true;allTime=true;$('#nall').textContent='חזור לחדשות החזקות';scanNews(hoursSinceClose())};
+$('#nall').onclick=()=>{allTime=false;allMode=!allMode;$('#nall').textContent=allMode?'חזור לחדשות החזקות':'הצג את כל הכתבות';drawNews()};
 setInterval(scanNews,600000);setTimeout(scanNews,600);
 const PAPER='https://paper-api.alpaca.markets/v2';
 let lastOrders=[],lastPos=[],editId=null,acct=null;const OPEN=['new','accepted','pending_new','partially_filled','held','accepted_for_bidding'];
