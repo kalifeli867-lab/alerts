@@ -53,107 +53,148 @@ details.rowc .dt{padding:0 14px 12px}
 .pill{border-radius:10px;padding:2px 8px;font-size:.78rem;background:var(--line);color:var(--ink);white-space:nowrap}
 .pill.g{background:rgba(61,220,151,.18);color:var(--up)}.pill.y{background:rgba(245,196,81,.18);color:#f5c451}
 details.rowc.a{border-inline-start:4px solid var(--up)}details.rowc.b{border-inline-start:4px solid #f5c451}details.rowc.c{border-inline-start:4px solid var(--mute)}
+/* ---- v6 redesign ---- */
+main{padding:calc(env(safe-area-inset-top,0px) + 6px) 14px calc(env(safe-area-inset-bottom,0px) + 104px)}
+#topbar{position:sticky;top:0;z-index:25;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0 8px;margin-bottom:4px}
+#topbar h1{font-size:1.3rem;margin:0}
+.sp{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:600;white-space:nowrap}
+button{min-height:46px;border-radius:12px;padding:10px 16px;font-weight:700}
+button.g{border:1px solid var(--line);color:var(--ink);background:transparent;padding:8px 14px;font-weight:600}
+button.danger{border-color:var(--down);color:var(--down)}
+button:disabled{opacity:.5}
+.btn-big{width:100%;min-height:58px;font-size:1.15rem;border-radius:14px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}.btnrow button{flex:1;min-width:120px}
+.card{border-radius:14px;padding:14px;margin-bottom:10px}
+.hero{padding:16px}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin:12px 0}
+.seg button{flex:1;background:transparent;color:var(--mute);font-weight:600;min-height:42px;padding:6px 8px;border-radius:10px}
+.seg button.on{background:var(--acc);color:#04111f}
+.pane{display:none}.pane.on{display:block}
+.sec-h{font-size:1.05rem;font-weight:700;margin:20px 0 8px}
+input,select,textarea{min-height:46px;font-size:16px;font-family:inherit}
+textarea{border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 12px;resize:none;width:100%}
+label{margin-top:12px}label.chk{display:flex;gap:10px;align-items:center;color:var(--ink)}label.chk input{width:auto;min-height:0;margin:0}
+details.opt>summary{min-height:34px;display:flex;align-items:center}
+#aichips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+#chat{display:flex;flex-direction:column;gap:10px;margin:8px 0 12px}
+.bub{max-width:92%;padding:10px 14px;border-radius:16px;line-height:1.6;font-size:.95rem}
+.bub.u{align-self:flex-start;background:var(--acc);color:#04111f;border-end-start-radius:4px}
+.bub.a{align-self:flex-end;background:var(--card);border:1px solid var(--line);border-end-end-radius:4px}
+.chatbar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);z-index:15;background:var(--bg);padding:8px 0;display:flex;gap:8px;align-items:flex-end}
+.chatbar button{min-height:46px}
 </style>
 </head>
 <body>
 <div id="toast" role="status"></div>
 <main>
-<div class="top"><div><h1>התראות עלייה</h1><div class="st" id="st">מושהה</div></div><button id="go">הפעל ניטור</button></div>
+<div id="topbar"><h1>עליות</h1><div id="mstat"></div></div>
+<div id="onb"></div>
 
-
-<div id="mstat"></div>
 <section class="tab" data-tab="scan">
-<div class="card" id="smcard"><button id="smart" style="width:100%;font-size:1.15rem;padding:14px">🔍 סרוק עכשיו</button><div class="m" id="smst" style="margin-top:8px;text-align:center">לחיצה אחת: האפליקציה בוחרת לבד את הסריקה המתאימה לשעה, ומצליבה עם חדשות.</div></div>
-<h2 id="sec-pm">תוצאות הסריקה</h2>
-<div class="st" id="pmst">לא נסרק עדיין</div>
+<div class="card hero"><button id="smart" class="btn-big">🔍 סרוק עכשיו</button>
+<div class="m" id="pmst" style="margin-top:10px;text-align:center">לחיצה אחת: האפליקציה בוחרת את הסריקה המתאימה לשעה, ומצליבה עם חדשות.</div><div id="smst" style="display:none"></div></div>
+<div class="seg"><button class="on" data-sv="stocks">📈 מניות עולות</button><button data-sv="news">📰 חדשות</button></div>
+
+<div class="pane on" data-sp="stocks">
 <div id="pmres"></div>
-<details class="opt"><summary>אפשרויות סריקה</summary>
-<label>מקור נתונים<select id="pmsrc"><option value="sip">SIP: כל הבורסות, באיחור 15 דקות (מומלץ, עובד מ-11:00)</option><option value="iex">IEX: חי אבל חלקי (יש נתונים רק מ-15:00 בישראל)</option><option value="sipl">SIP חי: כל הבורסות בזמן אמת (דורש מנוי Alpaca בתשלום)</option></select></label>
-<label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input id="pmauto" type="checkbox" style="width:auto;margin:0">רענון אוטומטי כל דקה (מחירים בלבד)</label>
-<button id="pmgo" style="margin-top:10px">סרוק מסחר מוקדם בלבד</button>
-<p class="m">בורסת IEX, שממנה מגיעים הנתונים החינמיים החיים, מתחילה לסחור רק ב-15:00 בישראל. עד אז מקור SIP (באיחור 15 דקות) הוא היחיד שמראה מסחר מוקדם.</p></details>
-<details class="opt" id="mktd"><summary>סריקת כל השוק (חי, או הסשן האחרון כשהשוק סגור)</summary><h2 id="sec-mkt">סריקת שוק: מחזור חריג וצבירה</h2>
-<p class="m">סורקת את כל מניות NASDAQ, NYSE ו-AMEX (עד המחיר המקסימלי שהגדרת) ומציגה מניות עם מחזור חריג, גם לפני שהמחיר זז. הסריקה לוקחת כחצי דקה וצורכת כמה מגה של נתונים. בשעות המסחר (בערך 11:00 עד 03:00 בישראל) היא בודקת את הרגע הנוכחי, ומחוץ להן היא מציגה את הסשן האחרון.</p>
-<div class="top"><span class="st" id="mkst">לא נסרק עדיין</span><button id="mkgo">סרוק את כל השוק</button></div>
 <div id="mkres"></div>
+<details class="opt"><summary>⚙️ אפשרויות סריקה</summary>
+<label>מקור נתונים<select id="pmsrc"><option value="sip">SIP: כל הבורסות, באיחור 15 דקות (מומלץ, עובד מ-11:00)</option><option value="iex">IEX: חי אבל חלקי (יש נתונים רק מ-15:00 בישראל)</option><option value="sipl">SIP חי: כל הבורסות בזמן אמת (דורש מנוי Alpaca בתשלום)</option></select></label>
+<label class="chk"><input id="pmauto" type="checkbox">רענון אוטומטי כל דקה (מחירים בלבד)</label>
+<div class="btnrow"><button id="pmgo" class="g">סרוק מסחר מוקדם בלבד</button><button id="mkgo" class="g">סרוק את כל השוק</button></div>
+<div class="m" id="mkst" style="margin-top:8px"></div>
+<p class="m">בורסת IEX, שממנה מגיעים הנתונים החינמיים החיים, מתחילה לסחור רק ב-15:00 בישראל. עד אז מקור SIP (באיחור 15 דקות) הוא היחיד שמראה מסחר מוקדם.</p></details>
+<details class="opt"><summary>🔥 הכי פעילות ועולות בבורסה</summary><div class="btnrow" style="margin-top:10px"><button id="hot">טען רשימה</button></div><div id="hotlist"></div></details>
+</div>
 
-</details>
-<details class="opt"><summary>המניות הפעילות והעולות בבורסה</summary><h2>איפה הכסף נכנס</h2>
-<p class="m">בכרטיסי המניות שלי מופיע המחזור של היום ביחס לממוצע היומי של 20 ימים. כאן אפשר לסרוק את המניות הפעילות והעולות ביותר בבורסה. מחזור חריג הוא סימן, לא הוכחה שהכסף מגיע ממוסדות.</p>
-<button id="hot">סרוק מניות פעילות</button>
-<div id="hotlist"></div>
-
-</details>
-</section>
-<section class="tab" data-tab="news"><h2 id="sec-news">חדשות לפני הפתיחה</h2>
-<div class="top"><span class="st" id="nst">לא נסרק עדיין</span><button id="ns">סרוק עכשיו</button></div>
-<p class="m">הציון (1 עד 10) הוא הערכה לפי סוג החדשה ומחיר המניה, ולא סיכוי מדויק לקפיצה. הסימן – אומר שלא זוהה קטליזטור בכותרת, לא שהחדשה לא חשובה.</p>
-<div class="top" style="margin-top:8px"><span class="m" id="ndiag"></span><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="nnight" style="padding:8px 12px">חדשות הלילה</button><button id="nall" class="g" style="border:1px solid var(--line);color:var(--ink)">הצג את כל הכתבות</button></div></div>
+<div class="pane" data-sp="news">
+<div class="seg"><button class="on" data-nv="strong">🔥 חזקות</button><button data-nv="night">🌙 הלילה</button><button data-nv="all">📄 הכל</button></div>
+<div class="t" style="margin-bottom:10px"><span class="m" id="nst">טרם נסרק</span><button id="ns" class="g">🔄 רענן</button></div>
 <div id="news"></div>
-
+<details class="opt"><summary>ℹ️ איך לקרוא את החדשות</summary><div class="m" id="ndiag" style="margin:8px 0"></div><p class="m">הציון (1 עד 10) הוא הערכה לפי סוג החדשה ומחיר המניה, ולא סיכוי מדויק לקפיצה. הסימן – אומר שלא זוהה קטליזטור בכותרת, לא שהחדשה לא חשובה.</p></details>
+</div>
 </section>
-<section class="tab" data-tab="watch"><h2 id="sec-watch">המניות שלי</h2>
-<div id="list"></div>
+
+<section class="tab" data-tab="watch">
+<div class="card"><div class="t"><div><b>ניטור עליות</b><div class="st" id="st">מושהה</div></div><button id="go">הפעל ניטור</button></div>
+<p class="m" style="margin:8px 0 0">כשהניטור פועל, האפליקציה בודקת את המניות שלך כל חצי דקה ומתריעה על עלייה חדה (צליל ורטט). היא חייבת להישאר פתוחה.</p></div>
+<div class="sec-h">המניות שלי</div><div id="list"></div>
 <div class="add"><input id="nt" dir="ltr" placeholder="סימול, למשל MSFT" autocapitalize="characters" maxlength="8"><button id="na">הוסף</button></div>
-
-<h2>התראות אחרונות</h2>
-<div id="log"></div>
-
+<div class="sec-h">התראות אחרונות</div><div id="log"></div>
 </section>
-<section class="tab" data-tab="trade"><h2 id="trade">מסחר בחשבון דמה (Paper)</h2>
-<p class="m">חשבון דמה בלבד: כל העסקאות כאן בכסף וירטואלי. בדוק כל הזמנה לפני האישור.</p>
-<div class="card"><div class="m" id="pacc">טוען…</div>
+
+<section class="tab" data-tab="trade">
+<div class="seg"><button class="on" data-tv="acc">📊 חשבון</button><button data-tv="jrn">📒 יומן</button><button data-tv="sc">🎯 ציונים</button></div>
+<div class="pane on" data-tp="acc">
+<div class="card"><div class="m" id="pacc">טוען…</div><div class="m" style="margin-top:4px">חשבון דמה בלבד: כל העסקאות בכסף וירטואלי.</div></div>
+<div class="sec-h">פוזיציות</div><div id="ppos"></div>
+<div class="sec-h">הזמנות אחרונות</div><div id="pord"></div>
+<div class="card" id="ebox" style="display:none"><b id="etitle"></b>
+<label>כמות<input id="eqty" type="number" min="1" step="1" inputmode="numeric"></label>
+<label id="elw">מחיר Limit<input id="elim" type="number" step="any" min="0" inputmode="decimal"></label>
+<div class="btnrow" style="margin-top:10px"><button id="esave">שמור שינוי</button><button id="eclose" class="g">סגור</button></div></div>
+<div class="btnrow" style="margin-top:8px"><button id="trf" class="g">🔄 רענן</button><button id="cancelall" class="g danger">בטל את כל ההזמנות הפתוחות</button></div>
+<details class="opt"><summary>✍️ הזמנה ידנית</summary>
 <label>סימול<input id="tsym" dir="ltr" placeholder="MSFT" autocapitalize="characters" maxlength="8"></label>
 <label>כמות (מספר שלם)<input id="tqty" type="number" min="1" step="1" inputmode="numeric" value="1"></label>
 <label>סוג הזמנה<select id="ttype"><option value="market">Market (מיידי)</option><option value="limit">Limit (מחיר מקסימלי)</option></select></label>
 <label>מחיר Limit<input id="tlim" type="number" step="any" min="0" inputmode="decimal" placeholder="רק ב-Limit או במסחר מורחב"></label>
 <label>סטופ לוס ($, אופציונלי, בקנייה)<input id="tstop" type="number" step="any" min="0" inputmode="decimal" placeholder="מכירה אוטומטית אם המחיר יורד לכאן"></label>
 <label>יעד רווח ($, אופציונלי, בקנייה)<input id="ttp" type="number" step="any" min="0" inputmode="decimal" placeholder="מכירה אוטומטית אם המחיר עולה לכאן"></label>
-<label style="display:flex;gap:8px;align-items:center"><input id="text" type="checkbox" style="width:auto;margin:0">מסחר מורחב (מוקדם או מאוחר, דורש מחיר Limit)</label>
-<div class="add" style="margin-top:12px"><button id="tbuy">קנה</button><button id="tsell" class="stop">מכור</button></div>
-<div class="m" id="tmsg" style="margin-top:8px"></div></div>
-<h2>פוזיציות</h2><div id="ppos"></div>
-<h2>הזמנות אחרונות</h2><div id="pord"></div>
-<div class="card" id="ebox" style="display:none"><b id="etitle"></b>
-<label>כמות<input id="eqty" type="number" min="1" step="1" inputmode="numeric"></label>
-<label id="elw">מחיר Limit<input id="elim" type="number" step="any" min="0" inputmode="decimal"></label>
-<div class="add" style="margin-top:10px"><button id="esave">שמור שינוי</button><button id="eclose" class="g" style="border:1px solid var(--line);color:var(--ink)">סגור</button></div></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button id="trf" class="g" style="border:1px solid var(--line);color:var(--ink)">רענן</button><button id="cancelall" class="g" style="border:1px solid var(--down);color:var(--down)">בטל את כל ההזמנות הפתוחות</button></div>
-
-<h2 id="sec-jrn">יומן עסקאות</h2>
-<div class="card" id="jsum">טוען…</div>
-<div id="jlist"></div>
-<p class="m">רווח ממומש: עסקאות שנסגרו (חישוב FIFO). רווח לא ממומש: פוזיציות שעדיין פתוחות. חשבון דמה בלבד.</p>
-
-<h2 id="sec-score">כרטיס ציונים לסימנים</h2>
-<p class="m">כל מניה שהסריקה מציגה נשמרת כאות. אחרי יום ואחרי חמישה ימי מסחר האפליקציה בודקת מה קרה לה, ומראה אילו סימנים באמת עבדו, בהשוואה לשוק. נדרשות עשרות אותות כדי להסיק משהו.</p>
-<div class="top"><span class="st" id="scst">אין עדיין אותות</span><div style="display:flex;gap:6px"><button id="scgo">עדכן</button><button id="sccl" class="g" style="border:1px solid var(--line);color:var(--ink)">מחק</button></div></div>
-<div id="scres"></div>
-
+<label class="chk"><input id="text" type="checkbox">מסחר מורחב (מוקדם או מאוחר, דורש מחיר Limit)</label>
+<div class="btnrow" style="margin-top:12px"><button id="tbuy">קנה</button><button id="tsell" class="stop">מכור</button></div>
+<div class="m" id="tmsg" style="margin-top:8px"></div></details>
+</div>
+<div class="pane" data-tp="jrn"><div class="card" id="jsum">טוען…</div><div id="jlist"></div>
+<p class="m">רווח ממומש: עסקאות שנסגרו (חישוב FIFO). רווח לא ממומש: פוזיציות שעדיין פתוחות. חשבון דמה בלבד.</p></div>
+<div class="pane" data-tp="sc"><p class="m">כל מניה שהסריקה מציגה נשמרת כאות. אחרי יום ואחרי חמישה ימי מסחר האפליקציה בודקת מה קרה לה, ומראה אילו סימנים באמת עבדו, בהשוואה לשוק. נדרשות עשרות אותות כדי להסיק משהו.</p>
+<div class="t" style="margin:8px 0"><span class="st" id="scst">אין עדיין אותות</span><div class="btnrow"><button id="scgo">עדכן</button><button id="sccl" class="g">מחק</button></div></div><div id="scres"></div></div>
 </section>
-<section class="tab" data-tab="settings"><div class="card"><b>רגישות הסריקה</b><p class="m">בחר פעם אחת. אפשר לכוון בהמשך בהגדרות המפורטות למטה.</p><div style="display:flex;gap:6px;flex-wrap:wrap"><button data-preset="loose">רגישה</button><button data-preset="normal">רגילה</button><button data-preset="strict">שמרנית</button></div><div class="m" id="presetnote" style="margin-top:6px"></div></div><details id="setup"><summary>חיבור לנתוני בורסה (Alpaca)</summary>
-<p><b>ארבעה צעדים:</b> 1) לחץ על הקישור והירשם בחינם, בחר חשבון Paper (בלי כסף אמיתי). 2) בלוח הבקרה חפש API Keys ולחץ Generate. 3) העתק את Key ID ואת Secret (ה-Secret מוצג פעם אחת בלבד). 4) הדבק כאן ולחץ "שמור מפתחות".</p>
+
+<section class="tab" data-tab="ai">
+<div id="aionb" class="card" style="display:none"><b>🔑 חיבור היועץ</b>
+<p class="m">היועץ פועל על מודל Claude של Anthropic ודורש מפתח אישי (בתשלום לפי שימוש, בדרך כלל סנטים בודדים לשיחה). איך משיגים: 1) נכנסים ל-<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">קונסולת המפתחות של Anthropic</a> ונרשמים. 2) מוסיפים יתרה קטנה בהגדרות החיוב. 3) יוצרים מפתח (Create Key). 4) מדביקים כאן.</p>
+<label>מפתח Anthropic<input id="akey" type="password" autocomplete="off" dir="ltr" placeholder="sk-ant-..."></label>
+<button id="aisave" style="margin-top:10px;width:100%">שמור והתחל</button></div>
+<div id="chat"></div>
+<div id="aichips"><button class="g" data-aq="איזו מניה בסריקה הכי מבטיחה, ולמה?">איזו מניה הכי מבטיחה?</button><button class="g" data-aq="מה הסיכון הגדול בעסקה במניה הכי חזקה בסריקה?">מה הסיכון?</button><button class="g" data-aq="תסביר לי בפשטות איך לקרוא את הציון 1 עד 10 ומה הוא לא אומר.">איך לקרוא את הציון?</button><button class="g" data-aq="מה כדאי לבדוק לפני שאני קונה מניה בדמה?">מה לבדוק לפני קנייה?</button><button class="g" data-aq="תסתכל על הפוזיציות והמעקב שלי ותגיד לי מה הסיכון.">איך הפוזיציות שלי?</button></div>
+<div class="chatbar"><textarea id="aiq" rows="1" placeholder="שאל על מניה, סיכון או הציונים"></textarea><button id="aisend">שלח</button></div>
+<div class="t" style="margin-top:6px"><label class="chk" style="margin:0"><input id="aictx" type="checkbox" checked>שלח ליועץ את נתוני הסריקה</label><button id="aiclr" class="g">נקה שיחה</button></div>
+<p class="m" style="margin-top:8px">היועץ לא מבטיח רווח ולא נותן הוראות קנייה. הוא מסביר נתונים ושיקולים. אין לו גישה לחדשות שלא מופיעות באפליקציה.</p>
+</section>
+
+<section class="tab" data-tab="settings">
+<details class="opt" id="setup"><summary>🔌 חיבור לנתוני בורסה (Alpaca)</summary>
+<p class="m"><b>ארבעה צעדים:</b> 1) הירשם בחינם בקישור למטה, ובחר חשבון Paper (בלי כסף אמיתי). 2) בלוח הבקרה חפש API Keys ולחץ Generate. 3) העתק את Key ID ואת Secret (ה-Secret מוצג פעם אחת בלבד). 4) הדבק כאן ולחץ "שמור מפתחות".</p>
 <label>Key ID<input id="kid" type="password" autocomplete="off" dir="ltr" placeholder="הדבק Key ID"></label>
 <label>Secret<input id="sec" type="password" autocomplete="off" dir="ltr" placeholder="הדבק Secret"></label>
 <p class="m"><a href="https://app.alpaca.markets/signup" target="_blank" rel="noopener">הרשמה חינמית ב-Alpaca</a></p>
-<button id="sk">שמור מפתחות</button></details>
-
-<details open><summary>הגדרות מפורטות</summary>
+<button id="sk" style="width:100%">שמור מפתחות</button></details>
+<details class="opt"><summary>💬 הגדרות היועץ (AI)</summary>
+<label>מפתח Anthropic<input id="akey2" type="password" autocomplete="off" dir="ltr" placeholder="sk-ant-..."></label>
+<label>מודל<select id="amodel"><option value="claude-sonnet-5-5">Sonnet 5.5: חכם יותר (מומלץ)</option><option value="claude-haiku-4-5-20251001">Haiku 4.5: מהיר וזול</option></select></label>
+<p class="m">המפתח נשמר רק בטלפון ונשלח רק ל-Anthropic. מומלץ להגדיר בקונסולה תקרת הוצאה חודשית.</p>
+<button id="aisave2" style="width:100%">שמור</button></details>
+<details class="opt" open><summary>🎚️ רגישות הסריקה</summary>
+<p class="m" style="margin:8px 0">בחר רמה אחת, או כוונן ידנית למטה.</p>
+<div class="btnrow"><button data-preset="loose">רגישה</button><button data-preset="normal">רגילה</button><button data-preset="strict">שמרנית</button></div><div class="m" id="presetnote" style="margin-top:6px"></div>
+<label>מחיר מקסימלי (חדשות וסריקת שוק) ($)<input id="s5" type="number" step="1" min="1" inputmode="decimal"></label>
+<label>עלייה מינימלית מהסגירה בסריקה (%)<input id="s9" type="number" step="0.5" min="0" inputmode="decimal"></label>
+<label>מחזור יחסי מינימלי בסריקה (פי כמה מהצפוי)<input id="s8" type="number" step="0.5" min="1" inputmode="decimal"></label>
+<label>ציון חדשה מינימלי להצגה (0-100)<input id="s6" type="number" step="5" min="0" max="100" inputmode="numeric"></label>
+<label>חדשות מהשעות האחרונות<input id="s4" type="number" step="1" min="1" max="48" inputmode="numeric"></label>
+<label>סיכון לעסקה בקנייה מהירה בדמה (% מהחשבון)<input id="s10" type="number" step="0.1" min="0.1" max="5" inputmode="decimal"></label></details>
+<details class="opt"><summary>🔔 התראות ניטור (המניות שלי)</summary>
 <label>עלייה של לפחות (%)<input id="s1" type="number" step="0.1" min="0.1" inputmode="decimal"></label>
 <label>בתוך חלון זמן (דקות)<input id="s2" type="number" step="1" min="5" inputmode="numeric"></label>
 <label>עלייה יומית גדולה (%)<input id="s3" type="number" step="0.5" min="1" inputmode="decimal"></label>
-<label>חדשות מהשעות האחרונות<input id="s4" type="number" step="1" min="1" max="48" inputmode="numeric"></label>
-<label>מחיר מקסימלי (חדשות וסריקת שוק) ($)<input id="s5" type="number" step="1" min="1" inputmode="decimal"></label>
-<label>ציון מינימלי להצגה (0-100)<input id="s6" type="number" step="5" min="0" max="100" inputmode="numeric"></label>
-<label>התראת מחזור חריג: מעל (% מהמחזור היומי הממוצע)<input id="s7" type="number" step="10" min="10" inputmode="numeric"></label>
-<label>סריקת שוק: מחזור יחסי מינימלי (פי כמה מהצפוי)<input id="s8" type="number" step="0.5" min="1" inputmode="decimal"></label>
-<label>סריקת שוק: עלייה מינימלית מהסגירה (%)<input id="s9" type="number" step="0.5" min="0" inputmode="decimal"></label>
-<label>סיכון לעסקה בקנייה מהירה בדמה (% מהחשבון)<input id="s10" type="number" step="0.1" min="0.1" max="5" inputmode="decimal"></label>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button id="bkp" class="g" style="border:1px solid var(--line);color:var(--ink)">גיבוי הגדרות (העתק)</button><button id="rst" class="g" style="border:1px solid var(--line);color:var(--ink)">שחזור מגיבוי</button></div>
+<label>התראת מחזור חריג: מעל (% מהמחזור היומי הממוצע)<input id="s7" type="number" step="10" min="10" inputmode="numeric"></label></details>
+<details class="opt"><summary>💾 גיבוי ושחזור</summary>
+<div class="btnrow" style="margin-top:10px"><button id="bkp" class="g">גיבוי הגדרות (העתק)</button><button id="rst" class="g">שחזור מגיבוי</button></div>
 <p class="m">הגיבוי כולל את המפתחות. שמור אותו במקום פרטי, למשל הערה נעולה בטלפון, ואם הנתונים יימחקו תוכל לשחזר בלחיצה.</p></details>
-
+<p class="note">האפליקציה מנטרת רק כשהיא פתוחה. הנתונים מ-Alpaca ועשויים להיות חלקיים או מאוחרים. מדובר בכלי עזר ולימוד: ציון גבוה אינו תחזית ואינו ייעוץ השקעות.</p>
 </section>
-<p class="note">האפליקציה מנטרת רק כשהיא פתוחה, והמסך נשאר דלוק בזמן הניטור. הנתונים מ-Alpaca (בורסת IEX, כולל מסחר מוקדם) ועשויים להיות חלקיים במניות שנסחרות מעט. מדובר בהתראה על תנועה חריגה ולא בתחזית או ייעוץ השקעות.</p>
+
 </main>
 <div id="qb" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;align-items:flex-end;justify-content:center"><div class="card" style="width:100%;max-width:640px;border-radius:16px 16px 0 0;margin:0;padding:16px calc(env(safe-area-inset-right,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 16px)"><div class="t"><b id="qbt"></b><span class="m">קנייה בדמה (בלי כסף אמיתי)</span></div>
 <label>כמות<input id="qbq" type="number" min="1" step="1" inputmode="numeric"></label>
@@ -162,10 +203,10 @@ details.rowc.a{border-inline-start:4px solid var(--up)}details.rowc.b{border-inl
 <label>יעד רווח ($)<input id="qbp" type="number" step="any" min="0" inputmode="decimal"></label>
 <div class="m" id="qbr" style="margin-top:8px"></div><div class="m" id="qbn" style="margin-top:4px"></div>
 <div class="add" style="margin-top:12px"><button id="qbok">אשר קנייה בדמה</button><button id="qbc" class="g" style="border:1px solid var(--line);color:var(--ink)">ביטול</button></div></div></div>
-<nav id="bnav"><button data-go="scan"><b>🔍</b>סורק</button><button data-go="news"><b>📰</b>חדשות</button><button data-go="watch"><b>⭐</b>מניות</button><button data-go="trade"><b>💼</b>מסחר</button><button data-go="settings"><b>⚙️</b>הגדרות</button></nav>
+<nav id="bnav"><button data-go="scan"><b>🔍</b>סורק</button><button data-go="watch"><b>⭐</b>מעקב</button><button data-go="trade"><b>💼</b>מסחר</button><button data-go="ai"><b>💬</b>יועץ</button><button data-go="settings"><b>⚙️</b>הגדרות</button></nav>
 <script>
 const $=s=>document.querySelector(s);
-const D={kid:'',sec:'',tickers:['NVDA','TSLA','AAPL','AMD','PLTR'],surge:8,win:10,day:20,nh:16,maxp:20,minscore:30,vol:100,rv:3,cg:3,pmsrc:'sip',risk:0.5,log:[]};
+const D={kid:'',sec:'',tickers:['NVDA','TSLA','AAPL','AMD','PLTR'],surge:8,win:10,day:20,nh:16,maxp:20,minscore:30,vol:100,rv:3,cg:3,pmsrc:'sip',risk:0.5,akey:'',amodel:'claude-sonnet-5-5',log:[]};
 try{Object.assign(D,JSON.parse(localStorage.getItem('sa2')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('sa2',JSON.stringify(D))}catch(e){}};
 const OK=t=>/^[A-Z.\-]{1,8}$/.test(t);
@@ -182,7 +223,7 @@ function render(){
     return `<div class="card t"><div><b>${t}</b><div class="m">${dp}${mv}${q&&!q.fresh?' · שוק סגור, מחיר סגירה':''}${volRatio[t]!==undefined?' · מחזור '+Math.round(volRatio[t])+'% מהממוצע':''}</div></div>
     <div style="display:flex;align-items:center;gap:6px"><span class="p">${q?'$'+q.c.toFixed(2):'–'}</span><button class="g" data-r="${t}" aria-label="הסר ${t}">✕</button></div></div>`}).join('')||'<p class="m">הוסף מניות למעקב.</p>';
   $('#log').innerHTML=D.log.map(a=>`<div class="card al"><b>${a.title}</b><div>${a.body}</div><div class="m">${new Date(a.ts).toLocaleString('he-IL')}</div></div>`).join('')||'<p class="m">עוד אין התראות.</p>';
-  setv('#kid',D.kid);setv('#sec',D.sec);setv('#s1',D.surge);setv('#s2',D.win);setv('#s3',D.day);setv('#s4',D.nh);setv('#s5',D.maxp);setv('#s6',D.minscore);setv('#s7',D.vol);setv('#s8',D.rv);setv('#s9',D.cg);setv('#pmsrc',D.pmsrc);setv('#s10',D.risk);
+  setv('#kid',D.kid);setv('#sec',D.sec);setv('#s1',D.surge);setv('#s2',D.win);setv('#s3',D.day);setv('#s4',D.nh);setv('#s5',D.maxp);setv('#s6',D.minscore);setv('#s7',D.vol);setv('#s8',D.rv);setv('#s9',D.cg);setv('#pmsrc',D.pmsrc);setv('#s10',D.risk);setv('#amodel',D.amodel);
 }
 function beep(){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(a.currentTime+.4)}catch(e){}}
 async function notify(title,body,tag){
@@ -335,8 +376,6 @@ async function scanNews(hrs){const HH=(typeof hrs==='number')?hrs:D.nh;
     $('#nst').textContent='נסרק '+new Date().toLocaleTimeString('he-IL')+' · '+arts.length+' כתבות';
   }catch(e){$('#nst').textContent='אין חיבור לחדשות (רשת או חסימת דפדפן)'}
 }
-$('#ns').onclick=scanNews;$('#nnight').onclick=()=>{allMode=true;allTime=true;$('#nall').textContent='חזור לחדשות החזקות';scanNews(hoursSinceClose())};
-$('#nall').onclick=()=>{allTime=false;allMode=!allMode;$('#nall').textContent=allMode?'חזור לחדשות החזקות':'הצג את כל הכתבות';drawNews()};
 setInterval(scanNews,600000);setTimeout(scanNews,600);
 const PAPER='https://paper-api.alpaca.markets/v2';
 let lastOrders=[],lastPos=[],editId=null,acct=null;const OPEN=['new','accepted','pending_new','partially_filled','held','accepted_for_bidding'];
@@ -610,7 +649,7 @@ async function marketScan(){
         if(r.ok){const j=await r.json();(j.news||[]).forEach(a=>{if((a.symbols||[]).length>3||ROUNDUP.test(a.headline||''))return;const sc=scoreArticle(a.headline||'',a.summary||'');(a.symbols||[]).forEach(q=>{if(!nw[q]||nw[q].sc<sc)nw[q]={sc,h:a.headline||'',a}})})}}catch(e){}
     }
     const fin=fin0.map(x=>{const n=nw[x.s],hasN=n&&n.sc>=25;return scoreRow({s:x.s,p:x.p,chg:x.chg,pmVol:x.vol,avg:x.avg,rvol:x.rvol,acc:x.acc,sd:x.sd,best:hasN?{sc:n.sc,h:n.h,a:n.a,ts:new Date(n.a.created_at).getTime()}:null,nNews:hasN?1:0,react:null,pmHigh:null,dist:null},now)}).sort((a,b)=>b.pot.score-a.pot.score).slice(0,25);
-    logSignals(fin.map(r=>({s:r.s,p:r.p,chg:r.chg,rvol:r.rvol,acc:r.acc,sd:r.sd,ps:r.pot.score})),Object.fromEntries(fin.filter(r=>r.best).map(r=>[r.s,{sc:r.best.sc}])),live,now);
+    mkRows=fin;logSignals(fin.map(r=>({s:r.s,p:r.p,chg:r.chg,rvol:r.rvol,acc:r.acc,sd:r.sd,ps:r.pot.score})),Object.fromEntries(fin.filter(r=>r.best).map(r=>[r.s,{sc:r.best.sc}])),live,now);
     box.innerHTML=fin.map(r=>rowCard(r,live?'מחזור היום':'מחזור הסשן')).join('')||'<p class="m">לא נמצאו מניות עם מחזור חריג כרגע.</p>';
     st.textContent=(live?'':'השוק סגור, מציג את הסשן האחרון · ')+`נסרקו ${Object.keys(snap).length} מניות · ${cands.length} מועמדות · ${fin.length} עם מחזור חריג · ${new Date().toLocaleTimeString('he-IL')}`;
   }catch(e){st.textContent='הסריקה נכשלה: '+(e&&e.message?e.message:'רשת או חסימת דפדפן')}
@@ -729,7 +768,7 @@ function rowCard(r,vl){
   const pills=(b?'<span class="pill g">📰</span>':'<span class="pill y">⚠️</span>')+(r.rvol?'<span class="pill">🔥×'+r.rvol.toFixed(1)+'</span>':'')+rp;
   const dv=Math.round((r.pmVol||0)*r.p),stop=r.p*0.92,tp=r.p*1.15;
   const nums='מחיר $'+r.p.toFixed(2)+(r.fresh?' (חי, IEX)':'')+(r.p<1?' · מניית פני, סיכון גבוה':'')+'<br>'+vl+': '+Math.round(r.pmVol||0).toLocaleString('en-US')+' מניות (בערך $'+dv.toLocaleString('en-US')+')'+(r.rvol?' · פי '+r.rvol.toFixed(1)+' מהצפוי':'')+'<br>ממוצע יומי '+Math.round(r.avg||0).toLocaleString('en-US')+' · ימי צבירה '+(r.acc||0)+'/10'+(r.pmHigh?' · שיא $'+r.pmHigh.toFixed(2)+' ('+fp(r.dist)+')':'')+(r.vwap?' · VWAP $'+r.vwap.toFixed(2):'');
-  return '<details class="card rowc '+edge+'"><summary><span class="rw-l"><b>'+esc(r.s)+'</b><span class="num" style="font-weight:700">$'+r.p.toFixed(2)+'</span>'+(r.fresh?'<span class="pill g">חי</span>':'')+'</span><span class="rw-r"><span class="pill '+tc+'" style="font-weight:700">⚡'+pot.s10+'/10</span>'+pills+'<span class="num '+cl(r.chg)+'" style="font-weight:700">'+fp(r.chg)+'</span></span></summary><div class="dt">'+explainHtml(r)+'<div class="m">'+nums+'</div>'+nl+'<div class="m" style="margin-top:8px">תוכנית דמה לדוגמה: כניסה $'+r.p.toFixed(2)+' · סטופ $'+stop.toFixed(2)+' (−8%) · יעד $'+tp.toFixed(2)+' (+15%)</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="'+bt+'" data-addt="'+esc(r.s)+'">+ מעקב</button><button data-qb="'+esc(r.s)+'" style="padding:8px 12px">💰 קנה בדמה</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+encodeURIComponent(r.s)+'&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div></details>';
+  return '<details class="card rowc '+edge+'"><summary><span class="rw-l"><b>'+esc(r.s)+'</b><span class="num" style="font-weight:700">$'+r.p.toFixed(2)+'</span>'+(r.fresh?'<span class="pill g">חי</span>':'')+'</span><span class="rw-r"><span class="pill '+tc+'" style="font-weight:700">⚡'+pot.s10+'/10</span>'+pills+'<span class="num '+cl(r.chg)+'" style="font-weight:700">'+fp(r.chg)+'</span></span></summary><div class="dt">'+explainHtml(r)+'<div class="m">'+nums+'</div>'+nl+'<div class="m" style="margin-top:8px">תוכנית דמה לדוגמה: כניסה $'+r.p.toFixed(2)+' · סטופ $'+stop.toFixed(2)+' (−8%) · יעד $'+tp.toFixed(2)+' (+15%)</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="g" style="'+bt+'" data-addt="'+esc(r.s)+'">+ מעקב</button><button data-qb="'+esc(r.s)+'" style="padding:8px 12px">💰 קנה בדמה</button><button class="g" data-ai="'+esc(r.s)+'">💬 שאל את ה-AI</button><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+encodeURIComponent(r.s)+'&type=&dateb=&owner=include&count=40" target="_blank" rel="noopener">דוחות SEC</a></div></div></details>';
 }
 let pmRows=[],pmFilter='all',qbState=null;
 function pmDraw(){
@@ -738,7 +777,7 @@ function pmDraw(){
   const chip=(k,t)=>'<button class="g" data-pmf="'+k+'" style="border:1px solid var(--line);color:'+(pmFilter===k?'var(--acc)':'var(--ink)')+';padding:6px 12px">'+t+'</button>';
   box.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+chip('all','הכל ('+pmRows.length+')')+chip('high','⚡ פוטנציאל גבוה')+chip('news','📰 עם חדשה')+'</div>'+(rows.slice(0,25).map(r=>rowCard(r,'מסחר מוקדם')).join('')||'<p class="m">אין מניות בסינון הזה.</p>');
 }
-document.addEventListener('click',e=>{const b=e.target.closest('[data-pmf]');if(b){pmFilter=b.dataset.pmf;pmDraw()}const q=e.target.closest('[data-qb]');if(q)openQuickBuy(q.dataset.qb)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pmf]');if(b){pmFilter=b.dataset.pmf;pmDraw()}const q=e.target.closest('[data-qb]');if(q)openQuickBuy(q.dataset.qb);const ai=e.target.closest('[data-ai]');if(ai)aiAsk(ai.dataset.ai);const aq=e.target.closest('[data-aq]');if(aq)aiSend(aq.dataset.aq)});
 function isRegular(now){const o=et(now),m=(+o.hour%24)*60+(+o.minute);return o.weekday!=='Sat'&&o.weekday!=='Sun'&&m>=570&&m<960}
 async function openQuickBuy(sym){
   sym=String(sym).toUpperCase();if(!OK(sym))return;
@@ -919,40 +958,113 @@ async function pmScan(){
 $('#pmgo').onclick=pmScan;
 $('#pmsrc').onchange=()=>{D.pmsrc=$('#pmsrc').value;save()};
 $('#pmauto').onchange=()=>{clearInterval(pmTimer);pmTimer=null;if($('#pmauto').checked){pmTimer=setInterval(pmRefresh,60000);pmRefresh()}};
+let mkRows=[],aiBusy=false,sessLabel='';
+const TABS=['scan','watch','trade','ai','settings'];
 function switchTab(n){
+  if(!TABS.includes(n))n='scan';
   document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===n));
   document.querySelectorAll('#bnav button').forEach(b=>b.classList.toggle('on',b.dataset.go===n));
   try{localStorage.setItem('sa_tab',n)}catch(e){}
   if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo(0,0);
 }
 document.querySelectorAll('#bnav button').forEach(b=>{b.onclick=()=>switchTab(b.dataset.go)});
+function seg(attr,pane,v,store){
+  document.querySelectorAll('['+attr+']').forEach(b=>b.classList.toggle('on',b.getAttribute(attr)===v));
+  document.querySelectorAll('['+pane+']').forEach(p=>p.classList.toggle('on',p.getAttribute(pane)===v));
+  try{localStorage.setItem(store,v)}catch(e){}
+}
+document.querySelectorAll('[data-sv]').forEach(b=>{b.onclick=()=>seg('data-sv','data-sp',b.dataset.sv,'sa_sv')});
+document.querySelectorAll('[data-tv]').forEach(b=>{b.onclick=()=>seg('data-tv','data-tp',b.dataset.tv,'sa_tv')});
+let nview='strong';
+function setNView(v){
+  nview=v;document.querySelectorAll('[data-nv]').forEach(b=>b.classList.toggle('on',b.dataset.nv===v));
+  if(v==='strong'){allMode=false;allTime=false;drawNews()}
+  else if(v==='night'){allMode=true;allTime=true;scanNews(hoursSinceClose())}
+  else{allMode=true;allTime=false;drawNews()}
+}
+document.querySelectorAll('[data-nv]').forEach(b=>{b.onclick=()=>setNView(b.dataset.nv)});
+$('#ns').onclick=()=>scanNews(nview==='night'?hoursSinceClose():undefined);
 function etInstant(now,h,m){const o=et(now);let t=Date.UTC(+o.year,+o.month-1,+o.day,h+4,m);for(let j=0;j<3;j++){const p=et(new Date(t)),d=(h*60+m)-((+p.hour%24)*60+(+p.minute));if(d===0)break;t+=d*60000}return new Date(t)}
 const ilt=d=>d.toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit'});
 function sessionBanner(){
   const now=(typeof window!=='undefined'&&window.__now)||new Date(),o=et(now),m=(+o.hour%24)*60+(+o.minute),wk=o.weekday==='Sat'||o.weekday==='Sun';
   const t=(h,mi)=>ilt(etInstant(now,h,mi));
   let dot,label;
-  if(wk){dot='🔴';label='סוף שבוע: השוק בארה"ב סגור'}
-  else if(m<240){dot='🔴';label='השוק סגור. המסחר המוקדם נפתח ב-'+t(4,0)+' שעון ישראל'}
-  else if(m<570){dot='🟡';label='מסחר מוקדם עכשיו ('+t(4,0)+' עד '+t(9,30)+' בישראל)'}
-  else if(m<960){dot='🟢';label='מסחר רגיל עכשיו (עד '+t(16,0)+' בישראל)'}
-  else if(m<1200){dot='🟠';label='מסחר מאוחר עכשיו (עד '+t(20,0)+' בישראל)'}
-  else{dot='🔴';label='השוק סגור. המסחר המוקדם נפתח מחר ב-'+t(4,0)+' שעון ישראל'}
-  const src=D.pmsrc==='iex'?'IEX חי (מ-'+t(8,0)+')':D.pmsrc==='sipl'?'SIP חי (מנוי)':'כל הבורסות, באיחור 15 דקות';
-  $('#mstat').innerHTML=`<div class="card" style="padding:10px 14px"><div>${dot} <b>${label}</b></div><div class="m">מקור הנתונים לסריקה: ${src}</div>${D.kid&&D.sec?'':'<div style="margin-top:8px"><button id="goset">חבר את Alpaca כדי להתחיל</button></div>'}</div>`;
-  const g=$('#goset');if(g)g.onclick=()=>switchTab('settings');
+  if(wk){dot='🔴';label='סוף שבוע · השוק סגור'}
+  else if(m<240){dot='🔴';label='סגור · נפתח ב-'+t(4,0)}
+  else if(m<570){dot='🟡';label='מסחר מוקדם · '+t(4,0)+' עד '+t(9,30)}
+  else if(m<960){dot='🟢';label='מסחר רגיל · עד '+t(16,0)}
+  else if(m<1200){dot='🟠';label='מסחר מאוחר · עד '+t(20,0)}
+  else{dot='🔴';label='סגור · נפתח מחר ב-'+t(4,0)}
+  sessLabel=dot+' '+label;
+  $('#mstat').innerHTML='<span class="sp">'+sessLabel+'</span>';
+  $('#onb').innerHTML=D.kid&&D.sec?'':'<div class="card"><b>👋 כדי להתחיל</b><p class="m" style="margin:6px 0 10px">האפליקציה צריכה חיבור חינמי לנתוני בורסה (Alpaca). לוקח כמה דקות, וכל המסחר בחשבון דמה בלי כסף אמיתי.</p><button id="goset" class="btn-big" style="min-height:50px;font-size:1rem">חבר את Alpaca</button></div>';
+  const g=$('#goset');if(g)g.onclick=()=>{switchTab('settings');$('#setup').open=true};
 }
-$('#smart').onclick=()=>{
-  if(!D.kid||!D.sec){switchTab('settings');toast('הדבק קודם את מפתחות Alpaca');return}
-  const live=sessFrac((typeof window!=='undefined'&&window.__now)||new Date())!==null,st=$('#smst');
-  if(live){st.textContent='סורק מסחר מוקדם ומצליב עם חדשות…';pmScan().then(()=>{st.textContent=$('#pmst').textContent;const r=$('#pmres');if(r.scrollIntoView)r.scrollIntoView()})}
-  else{$('#mktd').open=true;st.textContent='השוק סגור: מציג את הסשן האחרון…';marketScan().then(()=>{st.textContent=$('#mkst').textContent;const r=$('#mkres');if(r.scrollIntoView)r.scrollIntoView()})}
+$('#smart').onclick=async()=>{
+  if(!D.kid||!D.sec){switchTab('settings');$('#setup').open=true;toast('הדבק קודם את מפתחות Alpaca');return}
+  const b=$('#smart'),st=$('#pmst');if(b.disabled)return;b.disabled=true;
+  seg('data-sv','data-sp','stocks','sa_sv');
+  try{
+    const live=sessFrac(pmNow())!==null;
+    if(live){$('#mkres').innerHTML='';await pmScan()}
+    else{$('#pmres').innerHTML='';st.textContent='השוק סגור: סורק את הסשן האחרון…';await marketScan();st.textContent=$('#mkst').textContent}
+  }finally{b.disabled=false}
 };
 const PRESETS={loose:{cg:2,rv:2,minscore:20,maxp:20,name:'רגישה: הרבה תוצאות, יותר רעש'},normal:{cg:3,rv:3,minscore:25,maxp:10,name:'רגילה: איזון'},strict:{cg:5,rv:5,minscore:40,maxp:10,name:'שמרנית: מעט תוצאות, פחות רעש'}};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-preset]');if(!b)return;const p=PRESETS[b.dataset.preset];if(!p)return;
   D.cg=p.cg;D.rv=p.rv;D.minscore=p.minscore;D.maxp=p.maxp;save();render();$('#presetnote').textContent='הוגדר: '+p.name;toast('הרגישות עודכנה')});
 sessionBanner();setInterval(sessionBanner,60000);
 switchTab((()=>{try{return localStorage.getItem('sa_tab')}catch(e){return null}})()||(D.kid&&D.sec?'scan':'settings'));
+(()=>{try{const sv=localStorage.getItem('sa_sv'),tv=localStorage.getItem('sa_tv');if(sv==='news')seg('data-sv','data-sp','news','sa_sv');if(tv==='jrn'||tv==='sc')seg('data-tv','data-tp',tv,'sa_tv')}catch(e){}})();
+let aiHist=[];
+try{aiHist=JSON.parse(localStorage.getItem('sa_chat')||'[]').slice(-24)}catch(e){}
+const AI_SYS='אתה יועץ בתוך אפליקציה לסריקת מניות אמריקאיות לקפיצות חדות במסחר יומי. המשתמש ישראלי ומתאמן בחשבון דמה (Paper). ענה בעברית פשוטה וקצרה (עד 8 שורות, מתאים למסך טלפון), בלי מונחים מקצועיים בלי להסביר אותם. הסתמך על הנתונים שהאפליקציה מספקת למטה ואל תמציא מחירים, חדשות או מספרים שלא מופיעים בהם. אם חסר מידע, אמור זאת. היה כן: אין ביטחון בקפיצה, ורוב המניות עם ציון גבוה לא יקפצו. הדגש ניהול סיכון: סטופ, פוזיציה קטנה, מניות פני מסוכנות, דילול והנפקות. אל תבטיח רווח ואל תיתן הוראות קנייה או מכירה ודאיות, אלא שיקולים, תרחישים ומה לבדוק (קריאת הכתבה, דיווחי SEC כמו 8-K ו-S-3, מחזור, מחיר מול שיא הבוקר). כשמדברים על מניה, התייחס לציון (1 עד 10), לחדשה, למחזור ולמחיר.';
+function aiFmt(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^[-*] (.+)$/gm,'• $1').replace(/\n/g,'<br>')}
+function aiSave(){try{localStorage.setItem('sa_chat',JSON.stringify(aiHist.slice(-24)))}catch(e){}}
+function aiRender(typing){
+  const box=$('#chat');
+  box.innerHTML=(aiHist.length?aiHist.map(m=>'<div class="bub '+(m.r==='u'?'u':'a')+'">'+(m.r==='u'?esc(m.t):aiFmt(m.t))+'</div>').join(''):'<div class="card"><b>👋 היועץ שלך</b><div class="m" style="margin-top:6px">אפשר לשאול על מניה מהסריקה, על הסיכון בעסקה, או איך לקרוא את הציונים. אני רואה את תוצאות הסריקה האחרונה, המעקב והפוזיציות שלך. אני לא מבטיח רווח.</div></div>')+(typing?'<div class="bub a">חושב…</div>':'');
+  $('#aichips').style.display=aiHist.length?'none':'flex';
+  $('#aionb').style.display=D.akey?'none':'block';
+  if(!aiHist.length||typeof window==='undefined'||!window.scrollTo)return;
+  window.scrollTo(0,(document.body&&document.body.scrollHeight)||1e6);
+}
+function aiContext(focus){
+  const L=['נתוני האפליקציה בזמן השיחה:','זמן בישראל: '+new Date().toLocaleString('he-IL'),'מצב שוק: '+(sessLabel||'לא ידוע'),'הגדרות: מחיר מקסימלי $'+D.maxp+', עלייה מינימלית '+D.cg+'%.'];
+  const rows=(pmRows.length?pmRows:mkRows).slice().sort((a,b)=>b.pot.score-a.pot.score);
+  const clean=t=>t.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu,'').trim();
+  const line=r=>{const b=r.best,x=r.react;return r.s+' | $'+r.p.toFixed(2)+' | '+(r.chg>=0?'+':'')+r.chg.toFixed(1)+'% | ציון '+r.pot.s10+'/10 | מחזור '+(r.rvol?'פי '+r.rvol.toFixed(1)+' מהצפוי':'לא ידוע')+' | צבירה '+(r.acc||0)+'/10 | '+(b?'חדשה: "'+b.h+'" (ציון חדשה '+b.sc+(x?', שינוי מחיר מאז הפרסום '+x.pct.toFixed(1)+'%':'')+')':'אין חדשה חיובית ידועה')};
+  if(rows.length){L.push('תוצאות הסריקה האחרונה (מדורגות):');rows.slice(0,12).forEach(r=>L.push('- '+line(r)))}else L.push('עדיין לא בוצעה סריקה.');
+  if(focus){const f=rows.find(r=>r.s===focus);if(f)L.push('','פירוט על '+focus+': '+f.pot.why.map(w=>clean(w.text)+(w.pts?' ('+(w.pts>0?'+':'')+w.pts+')':'')).join(' | ')+(f.pmHigh?' | שיא הבוקר $'+f.pmHigh.toFixed(2):'')+(f.vwap?' | VWAP $'+f.vwap.toFixed(2):'')+' | ממוצע מחזור יומי '+Math.round(f.avg||0))}
+  if(D.tickers.length)L.push('','המעקב שלי: '+D.tickers.map(t=>t+(last[t]&&last[t].c?' $'+last[t].c.toFixed(2):'')).join(', '));
+  if(lastPos.length)L.push('','פוזיציות פתוחות בחשבון הדמה: '+lastPos.slice(0,10).map(p=>p.symbol+' x'+p.qty+' כניסה $'+Number(p.avg_entry_price).toFixed(2)+' רווח/הפסד לא ממומש $'+Number(p.unrealized_pl).toFixed(0)).join(' ; '));
+  if(acct&&acct.equity)L.push('שווי חשבון הדמה: $'+Math.round(Number(acct.equity)).toLocaleString('en-US'));
+  return L.join('\n');
+}
+async function aiSend(text,focus){
+  text=(text||'').trim();if(!text||aiBusy)return;
+  if(!D.akey){aiRender();toast('הדבק קודם מפתח Anthropic');return}
+  aiBusy=true;aiHist.push({r:'u',t:text});$('#aiq').value='';aiRender(true);
+  try{
+    const sys=AI_SYS+($('#aictx').checked?'\n\n'+aiContext(focus):'');
+    const msgs=[];aiHist.slice(-12).filter(m=>!m.err).forEach(m=>{const role=m.r==='u'?'user':'assistant';if(msgs.length&&msgs[msgs.length-1].role===role)msgs[msgs.length-1].content+='\n'+m.t;else msgs.push({role,content:m.t})});
+    while(msgs.length&&msgs[0].role!=='user')msgs.shift();
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':D.akey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:D.amodel||'claude-sonnet-5-5',max_tokens:1100,system:sys,messages:msgs})});
+    if(!r.ok){let e='';try{e=(await r.json()).error.message}catch(_){}
+      throw new Error(r.status===401?'המפתח לא תקין. בדוק אותו בהגדרות.':r.status===429?'יותר מדי בקשות. נסה שוב בעוד רגע.':/credit|billing/i.test(e)?'אין יתרה בחשבון Anthropic. הוסף יתרה בהגדרות החיוב.':'שגיאה '+r.status+(e?': '+e.slice(0,120):''))}
+    const j=await r.json(),out=(j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n').trim()||'לא התקבלה תשובה.';
+    aiHist.push({r:'a',t:out});
+  }catch(e){aiHist.push({r:'a',t:'⚠️ '+(e&&e.message?e.message:'אין חיבור לרשת'),err:1})}
+  aiBusy=false;aiSave();aiRender();
+}
+function aiAsk(sym){switchTab('ai');return aiSend('ספר לי על '+sym+': האם לפי הנתונים זו הזדמנות טובה? מה הסיכונים ומה כדאי לבדוק לפני קנייה בדמה?',sym)}
+$('#aisend').onclick=()=>aiSend($('#aiq').value);
+$('#aiq').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend($('#aiq').value)}};
+$('#aiclr').onclick=()=>{aiHist=[];aiSave();aiRender()};
+$('#aisave').onclick=()=>{const k=$('#akey').value.trim();if(!k){toast('הדבק מפתח');return}D.akey=k;save();$('#akey').value='';render();aiRender();toast('היועץ מחובר')};
+$('#aisave2').onclick=()=>{const k=$('#akey2').value.trim();if(k)D.akey=k;D.amodel=$('#amodel').value;save();$('#akey2').value='';aiRender();toast('נשמר')};
+aiRender();
 let toastT;function toast(t){if(!t||t==='שולח…')return;const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>{e.style.display='none'},8000)}
 try{new MutationObserver(()=>toast($('#tmsg').textContent)).observe($('#tmsg'),{childList:true,characterData:true,subtree:true})}catch(e){}
 $('#toast').onclick=()=>{$('#toast').style.display='none'};
